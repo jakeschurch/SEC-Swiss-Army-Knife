@@ -9,7 +9,7 @@ import os
 import errno
 import requests
 import re
-from config import DEFAULT_DATA_PATH
+# from configparser import DEFAULT_DATA_PATH
 import pandas as pd
 
 t1 = time.time()
@@ -30,8 +30,10 @@ sgml_retrieved_files = 0
 
 for index, row in cdata.iterrows():
     #print (row['Ticker'], row['SECFileName'])
-    
+
     # Set up all the required paths and URLs
+
+    DEFAULT_DATA_PATH = f"C:\\Users\student\\Desktop\\"
     base_path = os.path.join(DEFAULT_DATA_PATH, filing_type, row['Ticker'])
     file_path = os.path.join(base_path,row['SECFileName'])
     a_code = re.sub(r"-", "", row['SECFileName'].split('.')[0])
@@ -41,7 +43,7 @@ for index, row in cdata.iterrows():
     sgml_hdr_url = '/'.join([sec_base_url,str(row['CIK']),
                                  a_code,sgml_hdr_filename])
     sgml_file_path = file_path.split('.')[0]+'hdr.sgml'
-    
+
     # Retrieve and store SEC complete submission file if not already present
     if not os.path.exists(file_path):
         print ('Missing file for: ', row['Ticker'], row['SECFileName'])
@@ -54,15 +56,15 @@ for index, row in cdata.iterrows():
                         raise
             r = requests.get(file_url)
             with open(file_path, "w", encoding='utf-8') as f:
-                f.write(r.text)  
+                f.write(r.text)
             retrieved_files += 1
-            print('Retrieved SEC file for: ', row['Ticker'], 
+            print('Retrieved SEC file for: ', row['Ticker'],
                   ' ', row['FilingDate'])
         except OSError as exception:
             if exception.errno != errno.EEXIST:
                 raise
-    
-    # Retrieve and store SEC SGML header for this filing if not already present           
+
+    # Retrieve and store SEC SGML header for this filing if not already present
     if not os.path.exists(sgml_file_path):
         print ('Missing SGML header file for: ',row['Ticker'],sgml_hdr_filename)
         try:
@@ -74,16 +76,16 @@ for index, row in cdata.iterrows():
                         raise
             hdr = requests.get(sgml_hdr_url)
             with open(sgml_file_path, "w", encoding='utf-8') as f:
-                f.write(hdr.text)  
+                f.write(hdr.text)
             sgml_retrieved_files += 1
-            print('Retrieved SGML header file for: ', row['Ticker'], 
+            print('Retrieved SGML header file for: ', row['Ticker'],
                   ' ', row['FilingDate'])
         except OSError as exception:
             if exception.errno != errno.EEXIST:
                 raise
 
-t2 = time.time()                
+t2 = time.time()
 print(retrieved_files, ' SEC complete submission files retrieved')
 print(sgml_retrieved_files, ' SGML header files retrieved')
 print("Total Time taken: ")
-print(t2 - t1)    
+print(t2 - t1)
