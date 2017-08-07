@@ -25,41 +25,42 @@ class SecCrawler(object):
     def __init__(self):
         pass
 
-    def FindFiling(self, filing, startDate=_OneYearAgo,
+    def FindFiling(self, filingsList: list, startDate=_OneYearAgo,
                    endDate=_Today, n_filings=1):
-        #   Create filing url
-        _FilingInfo = f"CIK={filing.ticker}&type={filing.filing_type}"
-        SecFindFilingUrl = (self._SecBaseUrl + _FilingInfo
-                            + self._SecFilingParams)
 
-        #   Find and set Company CIK
-        r = requests.get(SecFindFilingUrl)
-        reg = re.search("(CIK=)\w+", r.text)
-        CIK = (reg.group(0).strip("CIK="))
-        filing.SetCIK(CIK)
+        for filing in filingsList:
+            #   Create filing url
+            _FilingInfo = f"CIK={filing.ticker}&type={filing.filing_type}"
+            SecFindFilingUrl = (self._SecBaseUrl + _FilingInfo
+                                + self._SecFilingParams)
 
-        #   Find and set latest Acc No. of specified filing
-        FilingsDF = pd.read_html(SecFindFilingUrl)[2]
-        FilingsDF = self.CleanupFilingsDF(FilingsDF, startDate, endDate)
-        print(FilingsDF["Description"])
-        AccNum = re.search("(Acc-no: \d+-\d+-)\w+",
-                           (FilingsDF["Description"][1]))
+            #   Find and set Company CIK
+            r = requests.get(SecFindFilingUrl)
+            reg = re.search("(CIK=)\w+", r.text)
+            CIK = (reg.group(0).strip("CIK="))
+            filing.SetCIK(CIK)
 
-        filing.SetAccNum(AccNum.group(0).strip("Acc-no: "))
+            FilingsDF = pd.read_html(SecFindFilingUrl)[2]
+            FilingsDF = self.CleanupFilingsDF(FilingsDF, startDate, endDate)
 
-        #   Set Filing and SGML Urls
-        AccNumW_oDashes = filing.AccNum.replace('-', "")
-        SecFilingUrl = (f"{self._SecArchivesUrl}/" +
-                        f"{filing.CIK}/{AccNumW_oDashes}/{filing.AccNum}")
+            #   Find and set latest Acc No. of specified filing
+            AccNum = re.search("(Acc-no: \d+-\d+-)\w+",
+                               (FilingsDF["Description"][1]))
+            filing.SetAccNum(AccNum.group(0).strip("Acc-no: "))
 
-        #   Send requests and set Filing and SGML HEAD Text
-        filingReq = requests.get(SecFilingUrl + ".txt",
-                                 headers=self._headers, stream=True)
-        SgmlHeadReq = requests.get(SecFilingUrl + ".hdr.sgml",
-                                   headers=self._headers, stream=True)
+            #   Set Filing and SGML Urls
+            AccNumW_oDashes = filing.AccNum.replace('-', "")
+            SecFilingUrl = (f"{self._SecArchivesUrl}/" +
+                            f"{filing.CIK}/{AccNumW_oDashes}/{filing.AccNum}")
 
-        filing.SetFilingText(filingReq.text)
-        filing.SetSgmlHead(SgmlHeadReq.text)
+            #   Send requests and set Filing and SGML HEAD Text
+            filingReq = requests.get(SecFilingUrl + ".txt",
+                                     headers=self._headers, stream=True)
+            SgmlHeadReq = requests.get(SecFilingUrl + ".hdr.sgml",
+                                       headers=self._headers, stream=True)
+
+            filing.SetFilingText(filingReq.text)
+            filing.SetSgmlHead(SgmlHeadReq.text)
 
     def CleanupFilingsDF(self, df, startDate, endDate):
         df.columns = df.iloc[0]
@@ -98,6 +99,6 @@ class Filing(object):
 
 if __name__ == "__main__":
     googFiling = Filing("goog", "8-k")
-
+    ibmFiling = Filing("ibm", "8-k")
     test = SecCrawler()
-    test.FindFiling(googFiling)
+    test.FindFiling([googFiling, ibmFiling])
