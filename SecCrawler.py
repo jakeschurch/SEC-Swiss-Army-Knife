@@ -25,8 +25,9 @@ class SecCrawler(object):
     def __init__(self):
         pass
 
-    def FindFiling(self, filingsList: list, startDate=_OneYearAgo,
-                   endDate=_Today, n_filings=1):
+    def FindFiling(self, filingsList: list,
+                   startDate=_OneYearAgo, endDate=_Today,
+                   n_filings=1):
 
         for filing in filingsList:
             #   Create filing url
@@ -42,25 +43,36 @@ class SecCrawler(object):
 
             FilingsDF = pd.read_html(SecFindFilingUrl)[2]
             FilingsDF = self.CleanupFilingsDF(FilingsDF, startDate, endDate)
+            n_filings = self.nFilingsAvailable(FilingsDF, n_filings)
 
-            #   Find and set latest Acc No. of specified filing
-            AccNum = re.search("(Acc-no: \d+-\d+-)\w+",
-                               (FilingsDF["Description"][1]))
-            filing.SetAccNum(AccNum.group(0).strip("Acc-no: "))
+            for n in range(1, n_filings + 1):
+                #   Find and set latest Acc No. of specified filing
+                nFiling = Filing(filing.ticker, filing.filing_type)
 
-            #   Set Filing and SGML Urls
-            AccNumW_oDashes = filing.AccNum.replace('-', "")
-            SecFilingUrl = (f"{self._SecArchivesUrl}/" +
-                            f"{filing.CIK}/{AccNumW_oDashes}/{filing.AccNum}")
+                AccNum = re.search("(Acc-no: \d+-\d+-)\w+",
+                                   (FilingsDF["Description"][n]))
 
-            #   Send requests and set Filing and SGML HEAD Text
-            filingReq = requests.get(SecFilingUrl + ".txt",
-                                     headers=self._headers, stream=True)
-            SgmlHeadReq = requests.get(SecFilingUrl + ".hdr.sgml",
-                                       headers=self._headers, stream=True)
+                nFiling.SetAccNum(AccNum.group(0).strip("Acc-no: "))
+                nFiling.SetFilingDate(FilingsDF["Filing Date"][n])
 
-            filing.SetFilingText(filingReq.text)
-            filing.SetSgmlHead(SgmlHeadReq.text)
+                #   Set Filing and SGML Urls
+                AccNumW_oDashes = nFiling.AccNum.replace('-', "")
+                SecFilingUrl = (f"{self._SecArchivesUrl}/" +
+                                f"{filing.CIK}/{AccNumW_oDashes}/" +
+                                f"{filing.AccNum}")
+
+                #   Send requests and set Filing and SGML HEAD Text
+                filingReq = requests.get(SecFilingUrl + ".txt",
+                                         headers=self._headers, stream=True)
+                SgmlHeadReq = requests.get(SecFilingUrl + ".hdr.sgml",
+                                           headers=self._headers, stream=True)
+
+                nFiling.SetFilingText(filingReq.text)
+                nFiling.SetSgmlHead(SgmlHeadReq.text)
+
+                global filingListing
+                filingListing.append(nFiling)
+                nFiling = None
 
     def CleanupFilingsDF(self, df, startDate, endDate):
         df.columns = df.iloc[0]
@@ -68,6 +80,13 @@ class SecCrawler(object):
         df = df[(df["Filing Date"] >= startDate) &
                 (df["Filing Date"] <= endDate)]
         return df
+
+    def nFilingsAvailable(self, df, n_FilingsWanted):
+        # TODO: need to log somewhere if n_filings are not available
+        if n_FilingsWanted <= len(df.index):
+            return n_FilingsWanted
+        else:
+            return len(df.index)
 
 
 class Filing(object):
@@ -83,6 +102,7 @@ class Filing(object):
             self.AccNum = AccNum
             self.FilingText = None
             self.SgmlHead = None
+            self.FilingDate = None
 
     def SetCIK(self, CIK):
         self.CIK = CIK
@@ -96,9 +116,18 @@ class Filing(object):
     def SetSgmlHead(self, SgmlHead):
         self.SgmlHead = SgmlHead
 
+    def SetFilingDate(self, FilingDate):
+        self.FilingDate = FilingDate
+
 
 if __name__ == "__main__":
+    global filingListing
+    filingListing = []
+
     googFiling = Filing("goog", "8-k")
     ibmFiling = Filing("ibm", "8-k")
     test = SecCrawler()
-    test.FindFiling([googFiling, ibmFiling])
+    test.FindFiling([googFiling, ibmFiling], startDate='2017-02-23', n_filings=10)
+
+    for fil in filingListing:
+        print(fil.ticker, fil.FilingDate)
