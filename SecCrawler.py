@@ -31,7 +31,7 @@ class SecCrawler(object):
 
         for filing in filingsList:
             #   Create filing url
-            _FilingInfo = f"CIK={filing.ticker}&type={filing.filing_type}"
+            _FilingInfo = f"CIK={filing.ticker}&type={filing.FilingType}"
             SecFindFilingUrl = (self._SecBaseUrl + _FilingInfo
                                 + self._SecFilingParams)
 
@@ -47,7 +47,7 @@ class SecCrawler(object):
 
             for n in range(1, n_filings + 1):
                 #   Find and set latest Acc No. of specified filing
-                nFiling = Filing(filing.ticker, filing.filing_type)
+                nFiling = Filing(filing.ticker, filing.FilingType, filing.CIK)
 
                 AccNum = re.search("(Acc-no: \d+-\d+-)\w+",
                                    (FilingsDF["Description"][n]))
@@ -56,10 +56,9 @@ class SecCrawler(object):
                 nFiling.SetFilingDate(FilingsDF["Filing Date"][n])
 
                 #   Set Filing and SGML Urls
-                AccNumW_oDashes = nFiling.AccNum.replace('-', "")
                 SecFilingUrl = (f"{self._SecArchivesUrl}/" +
-                                f"{filing.CIK}/{AccNumW_oDashes}/" +
-                                f"{filing.AccNum}")
+                                f"{nFiling.CIK}/{nFiling.AccNumW_oDashes}/" +
+                                f"{nFiling.AccNum}")
 
                 #   Send requests and set Filing and SGML HEAD Text
                 filingReq = requests.get(SecFilingUrl + ".txt",
@@ -70,9 +69,7 @@ class SecCrawler(object):
                 nFiling.SetFilingText(filingReq.text)
                 nFiling.SetSgmlHead(SgmlHeadReq.text)
 
-                global filingListing
-                filingListing.append(nFiling)
-                nFiling = None
+                filingListing.addFiling(nFiling)
 
     def CleanupFilingsDF(self, df, startDate, endDate):
         df.columns = df.iloc[0]
@@ -90,16 +87,17 @@ class SecCrawler(object):
 
 
 class Filing(object):
-    _working_filing_types = ['10-k', '8-k']
+    _working_FilingTypes = ['10-k', '8-k']
 
-    def __init__(self, ticker, filing_type, CIK=None, AccNum=None):
-        if filing_type not in self._working_filing_types:
+    def __init__(self, ticker, FilingType, CIK=None, AccNum=None):
+        if FilingType not in self._working_FilingTypes:
             raise ValueError("Invalid filing type")
         else:
             self.ticker = ticker
             self.CIK = CIK
-            self.filing_type = filing_type
+            self.FilingType = FilingType
             self.AccNum = AccNum
+            self.AccNumW_oDashes = None
             self.FilingText = None
             self.SgmlHead = None
             self.FilingDate = None
@@ -109,6 +107,7 @@ class Filing(object):
 
     def SetAccNum(self, AccNum):
         self.AccNum = AccNum
+        self.AccNumW_oDashes = AccNum.replace('-', "")
 
     def SetFilingText(self, FilingText):
         self.FilingText = FilingText
@@ -120,15 +119,36 @@ class Filing(object):
         self.FilingDate = FilingDate
 
 
+class FilingList(list):
+    def __init__(self):
+        pass
+
+    def addFiling(self, filing: Filing):
+        if isinstance(filing, Filing) is False:
+            raise Exception("filing is not of type: " +
+                            f"<class '{__name__}.Filing'>" +
+                            f"but of type: {(type(filing))}")
+        else:
+            self.append(filing)
+
+    def GetFilingList(self):
+        return self
+
+
+filingListing = FilingList()
+
 if __name__ == "__main__":
-    global filingListing
+    '''global filingListing
     filingListing = []
 
-    googFiling = Filing("goog", "8-k")
-    ibmFiling = Filing("ibm", "8-k")
-    test = SecCrawler()
-    test.FindFiling([googFiling, ibmFiling], startDate='2017-02-23',
-                    n_filings=10)
 
-    for fil in filingListing:
-        print(fil.ticker, fil.FilingDate)
+    ibmFiling = Filing("ibm", "8-k")
+
+
+    print(newL.GetFilingList())'''
+    googFiling = Filing("goog", "8-k")
+
+    test = SecCrawler()
+    test.FindFiling([googFiling])
+    for filing in filingListing:
+        print(filing.FilingText)
