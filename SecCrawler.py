@@ -127,7 +127,8 @@ if __name__ == "__main__":
     googFiling = Filing("goog", "8-k")
     ibmFiling = Filing("ibm", "8-k")
     test = SecCrawler()
-    test.FindFiling([googFiling, ibmFiling], startDate='2017-02-23', n_filings=10)
+    test.FindFiling([googFiling, ibmFiling], startDate='2017-02-23',
+                    n_filings=10)
 
     for fil in filingListing:
         print(fil.ticker, fil.FilingDate)
