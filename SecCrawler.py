@@ -10,12 +10,14 @@ import re
 import datetime
 import time
 
+
 class SecCrawler(object):
     #   Variables for SEC Edgar URL requests
     _SecBaseUrl = "https://www.sec.gov/cgi-bin/browse-edgar?"
     _SecArchivesUrl = 'https://www.sec.gov/Archives/edgar/data'
-    _SecFilingParams = "&owner=exclude&action=getcompany"
+    _SecFilingParams = "&owner=exclude&action=getcompany"  # REVIEW: where is priorto?
     _headers = {"Connection": "close"}
+    _TotalN_Requests = 0
 
     #   Variables for Date requests
     _Today = datetime.date.today()
@@ -27,50 +29,51 @@ class SecCrawler(object):
 
     def FindFiling(self, filing,
                    startDate=_20YearsAgo,
-                   endDate=_Today,
-                   ):
+                   endDate=_Today):
 
-            #   Create filing url
-            _FilingInfo = f"CIK={filing.ticker}&type={filing.FilingType}"
-            SecFindFilingUrl = (self._SecBaseUrl + _FilingInfo +
-                                self._SecFilingParams)
+        #   Create filing url
+        _FilingInfo = f"CIK={filing.ticker}&type={filing.FilingType}"
+        SecFindFilingUrl = (self._SecBaseUrl + _FilingInfo +
+                            self._SecFilingParams)
 
-            #   Find and set Company CIK
-            r = requests.get(SecFindFilingUrl)
-            reg = re.search("(CIK=)\w+", r.text)
-            CIK = (reg.group(0).strip("CIK="))
-            filing.SetCIK(CIK)
+        #   Find and set Company CIK
+        r = requests.get(SecFindFilingUrl)
+        self._TotalN_Requests += 1
 
-            FilingsDF = pd.read_html(SecFindFilingUrl)[2]
-            FilingsDF = self.CleanupFilingsDF(FilingsDF, startDate, endDate)
-            n_FilingWanted = filing.Get_nFilingWanted()
+        reg = re.search("(CIK=)\w+", r.text)
+        CIK = (reg.group(0).strip("CIK="))
+        filing.SetCIK(CIK)
 
-            if len(FilingsDF.index) < n_FilingWanted:
-                # TODO: need to log somewhere if n_filings are not available
-                return None
+        FilingsDF = pd.read_html(SecFindFilingUrl)[2]
+        FilingsDF = self.CleanupFilingsDF(FilingsDF, startDate, endDate)
+        n_FilingWanted = filing.Get_nFilingWanted()
 
-            #   Find and set latest Acc No. of specified filing
-            AccNum = re.search("(Acc-no: \d+-\d+-)\w+",
-                               (FilingsDF["Description"][n_FilingWanted]))
+        if len(FilingsDF.index) < n_FilingWanted:
+            # TODO: need to log somewhere if n_filings are not available
+            return None
 
-            filing.SetAccNum(AccNum.group(0).strip("Acc-no: "))
-            filing.SetFilingDate(FilingsDF["Filing Date"][n_FilingWanted])
+        #   Find and set latest Acc No. of specified filing
+        AccNum = re.search("(Acc-no: \d+-\d+-)\w+",
+                           (FilingsDF["Description"][n_FilingWanted]))
 
-            #   Set Filing and SGML Urls
-            SecFilingUrl = (f"{self._SecArchivesUrl}/" +
-                            f"{filing.CIK}/{filing.AccNumW_oDashes}/" +
-                            f"{filing.AccNum}")
+        filing.SetAccNum(AccNum.group(0).strip("Acc-no: "))
+        filing.SetFilingDate(FilingsDF["Filing Date"][n_FilingWanted])
 
-            #   Send requests and set Filing and SGML HEAD Text
-            filingReq = requests.get(SecFilingUrl + ".txt",
-                                     headers=self._headers, stream=True)
-            SgmlHeadReq = requests.get(SecFilingUrl + ".hdr.sgml",
-                                       headers=self._headers, stream=True)
+        #   Set Filing and SGML Urls
+        SecFilingUrl = (f"{self._SecArchivesUrl}/" +
+                        f"{filing.CIK}/{filing.AccNumW_oDashes}/" +
+                        f"{filing.AccNum}")
 
-            filing.SetFilingText(filingReq.text)
-            filing.SetSgmlHead(SgmlHeadReq.text)
+        #   Send requests and set Filing and SGML HEAD Text
+        filingReq = requests.get(SecFilingUrl + ".txt",
+                                 headers=self._headers, stream=True)
+        SgmlHeadReq = requests.get(SecFilingUrl + ".hdr.sgml",
+                                   headers=self._headers, stream=True)
 
-            G_filingListing.addFiling(filing)
+        filing.SetFilingText(filingReq.text)
+        filing.SetSgmlHead(SgmlHeadReq.text)
+
+        G_filingListing.addFiling(filing)
 
     def CleanupFilingsDF(self, df, startDate, endDate):
         df.columns = df.iloc[0]
@@ -199,6 +202,6 @@ def BaseTime():
 
 
 if __name__ == "__main__":
-    SetInterimListing([Filing("goog", "8-k", totalFilingsWanted=15)])
-    BaseTime()
-    print(len(G_filingListing))
+    # SetInterimListing([Filing("goog", "8-k", totalFilingsWanted=15)])
+    # BaseTime()
+    # print(len(G_filingListing))
