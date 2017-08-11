@@ -8,7 +8,7 @@ import requests
 import pandas as pd
 import re
 import datetime
-
+import time
 
 class SecCrawler(object):
     #   Variables for SEC Edgar URL requests
@@ -19,21 +19,21 @@ class SecCrawler(object):
 
     #   Variables for Date requests
     _Today = datetime.date.today()
-    _OneYearAgo = (_Today - datetime.timedelta(days=365)).isoformat()
+    _20YearsAgo = (_Today - datetime.timedelta(days=365 * 20)).isoformat()
     _Today = _Today.isoformat()
 
     def __init__(self):
         pass
 
-    def FindFiling(self, filingsList: list,
-                   startDate=_OneYearAgo, endDate=_Today,
-                   n_filings=1):
+    def FindFiling(self, filing,
+                   startDate=_20YearsAgo,
+                   endDate=_Today,
+                   ):
 
-        for filing in filingsList:
             #   Create filing url
             _FilingInfo = f"CIK={filing.ticker}&type={filing.FilingType}"
-            SecFindFilingUrl = (self._SecBaseUrl + _FilingInfo
-                                + self._SecFilingParams)
+            SecFindFilingUrl = (self._SecBaseUrl + _FilingInfo +
+                                self._SecFilingParams)
 
             #   Find and set Company CIK
             r = requests.get(SecFindFilingUrl)
@@ -43,33 +43,34 @@ class SecCrawler(object):
 
             FilingsDF = pd.read_html(SecFindFilingUrl)[2]
             FilingsDF = self.CleanupFilingsDF(FilingsDF, startDate, endDate)
-            n_filings = self.nFilingsAvailable(FilingsDF, n_filings)
+            n_FilingWanted = filing.Get_nFilingWanted()
 
-            for n in range(1, n_filings + 1):
-                #   Find and set latest Acc No. of specified filing
-                nFiling = Filing(filing.ticker, filing.FilingType, filing.CIK)
+            if len(FilingsDF.index) < n_FilingWanted:
+                # TODO: need to log somewhere if n_filings are not available
+                return None
 
-                AccNum = re.search("(Acc-no: \d+-\d+-)\w+",
-                                   (FilingsDF["Description"][n]))
+            #   Find and set latest Acc No. of specified filing
+            AccNum = re.search("(Acc-no: \d+-\d+-)\w+",
+                               (FilingsDF["Description"][n_FilingWanted]))
 
-                nFiling.SetAccNum(AccNum.group(0).strip("Acc-no: "))
-                nFiling.SetFilingDate(FilingsDF["Filing Date"][n])
+            filing.SetAccNum(AccNum.group(0).strip("Acc-no: "))
+            filing.SetFilingDate(FilingsDF["Filing Date"][n_FilingWanted])
 
-                #   Set Filing and SGML Urls
-                SecFilingUrl = (f"{self._SecArchivesUrl}/" +
-                                f"{nFiling.CIK}/{nFiling.AccNumW_oDashes}/" +
-                                f"{nFiling.AccNum}")
+            #   Set Filing and SGML Urls
+            SecFilingUrl = (f"{self._SecArchivesUrl}/" +
+                            f"{filing.CIK}/{filing.AccNumW_oDashes}/" +
+                            f"{filing.AccNum}")
 
-                #   Send requests and set Filing and SGML HEAD Text
-                filingReq = requests.get(SecFilingUrl + ".txt",
-                                         headers=self._headers, stream=True)
-                SgmlHeadReq = requests.get(SecFilingUrl + ".hdr.sgml",
-                                           headers=self._headers, stream=True)
+            #   Send requests and set Filing and SGML HEAD Text
+            filingReq = requests.get(SecFilingUrl + ".txt",
+                                     headers=self._headers, stream=True)
+            SgmlHeadReq = requests.get(SecFilingUrl + ".hdr.sgml",
+                                       headers=self._headers, stream=True)
 
-                nFiling.SetFilingText(filingReq.text)
-                nFiling.SetSgmlHead(SgmlHeadReq.text)
+            filing.SetFilingText(filingReq.text)
+            filing.SetSgmlHead(SgmlHeadReq.text)
 
-                filingListing.addFiling(nFiling)
+            G_filingListing.addFiling(filing)
 
     def CleanupFilingsDF(self, df, startDate, endDate):
         df.columns = df.iloc[0]
@@ -78,18 +79,14 @@ class SecCrawler(object):
                 (df["Filing Date"] <= endDate)]
         return df
 
-    def nFilingsAvailable(self, df, n_FilingsWanted):
-        # TODO: need to log somewhere if n_filings are not available
-        if n_FilingsWanted <= len(df.index):
-            return n_FilingsWanted
-        else:
-            return len(df.index)
-
 
 class Filing(object):
     _working_FilingTypes = ['10-k', '8-k']
 
-    def __init__(self, ticker, FilingType, CIK=None, AccNum=None):
+    def __init__(self, ticker, FilingType,
+                 CIK=None, AccNum=None,
+                 N_filingWanted=1, totalFilingsWanted=1):
+
         if FilingType not in self._working_FilingTypes:
             raise ValueError("Invalid filing type")
         else:
@@ -97,10 +94,15 @@ class Filing(object):
             self.CIK = CIK
             self.FilingType = FilingType
             self.AccNum = AccNum
+            self.N_filingWanted = N_filingWanted
             self.AccNumW_oDashes = None
             self.FilingText = None
             self.SgmlHead = None
             self.FilingDate = None
+            self.totalFilingsWanted = totalFilingsWanted
+
+    def GetTickAndType(self):
+        return [self.ticker, self.FilingType]
 
     def SetCIK(self, CIK):
         self.CIK = CIK
@@ -117,6 +119,15 @@ class Filing(object):
 
     def SetFilingDate(self, FilingDate):
         self.FilingDate = FilingDate
+
+    def Set_filingWanted(self, N_filingWanted):
+        self.N_filingWanted = N_filingWanted
+
+    def SetTotalFilingsWanted(self, totalFilingsWanted):
+        self.totalFilingsWanted = totalFilingsWanted
+
+    def Get_nFilingWanted(self):
+        return self.N_filingWanted
 
 
 class FilingList(list):
@@ -135,20 +146,59 @@ class FilingList(list):
         return self
 
 
-filingListing = FilingList()
+G_filingListing = FilingList()
+
+
+def SetInterimListing(Listing: list):
+    from gevent.pool import Pool
+
+    NUM_WORKERS = 4
+
+    filingList = []
+
+    for f in Listing:
+        nIndex = f.totalFilingsWanted
+        while nIndex > 0:
+            filingList.append(
+                Filing(*f.GetTickAndType(),
+                       N_filingWanted=nIndex))
+            nIndex -= 1
+
+    pool = Pool(NUM_WORKERS)
+    for f in filingList:
+        pool.spawn(SecCrawler().FindFiling, f)
+    start_time = time.time()
+    pool.join()
+
+    end_time = time.time()
+    print(end_time - start_time)
+
+
+def SetListingForTesting(Listing: list):
+    filingList = []
+
+    for f in Listing:
+        nIndex = f.totalFilingsWanted
+        while nIndex > 0:
+            filingList.append(
+                Filing(*f.GetTickAndType(),
+                       N_filingWanted=nIndex))
+            nIndex -= 1
+    return filingList
+
+
+def BaseTime():
+    TestList = [Filing("goog", "8-k", totalFilingsWanted=15)]
+    Listings = SetListingForTesting(TestList)
+
+    start_time = time.time()
+    [SecCrawler().FindFiling(f) for f in Listings]
+
+    end_time = time.time()
+    print(end_time - start_time)
+
 
 if __name__ == "__main__":
-    '''global filingListing
-    filingListing = []
-
-
-    ibmFiling = Filing("ibm", "8-k")
-
-
-    print(newL.GetFilingList())'''
-    googFiling = Filing("goog", "8-k")
-
-    test = SecCrawler()
-    test.FindFiling([googFiling])
-    for filing in filingListing:
-        print(filing.FilingText)
+    SetInterimListing([Filing("goog", "8-k", totalFilingsWanted=15)])
+    BaseTime()
+    print(len(G_filingListing))
