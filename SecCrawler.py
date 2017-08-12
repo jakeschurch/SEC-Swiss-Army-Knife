@@ -15,13 +15,14 @@ class SecCrawler(object):
     #   Variables for SEC Edgar URL requests
     _SecBaseUrl = "https://www.sec.gov/cgi-bin/browse-edgar?"
     _SecArchivesUrl = 'https://www.sec.gov/Archives/edgar/data'
-    _SecFilingParams = "&owner=exclude&action=getcompany"  # REVIEW: where is priorto?
+    _SecCoParams = "&owner=exclude&action=getcompany"
     _headers = {"Connection": "close"}
     _TotalN_Requests = 0
 
     #   Variables for Date requests
     _Today = datetime.date.today()
     _20YearsAgo = (_Today - datetime.timedelta(days=365 * 20)).isoformat()
+    print(_Today)
     _Today = _Today.isoformat()
 
     def __init__(self):
@@ -32,9 +33,10 @@ class SecCrawler(object):
                    endDate=_Today):
 
         #   Create filing url
-        _FilingInfo = f"CIK={filing.ticker}&type={filing.FilingType}"
-        SecFindFilingUrl = (self._SecBaseUrl + _FilingInfo +
-                            self._SecFilingParams)
+        _FilingParams = f"CIK={filing.ticker}&type={filing.FilingType}"
+        _DateParams = f"&dateb={_Today}&datea={_20YearsAgo}"
+        SecFindFilingUrl = (self._SecBaseUrl + _FilingParams + _DateParams +
+                            self._SecCoParams)
 
         #   Find and set Company CIK
         r = self.GetRequest(SecFindFilingUrl)
@@ -77,8 +79,6 @@ class SecCrawler(object):
     def CleanupFilingsDF(self, df, startDate, endDate):
         df.columns = df.iloc[0]
         df = df.reindex(df.index.drop(0))
-        df = df[(df["Filing Date"] >= startDate) &
-                (df["Filing Date"] <= endDate)]
         return df
 
     def GetRequest(self, URL):
@@ -212,6 +212,8 @@ def BaseTime():
 
 
 if __name__ == "__main__":
+    SecCrawler()
+
     # SetInterimListing([Filing("goog", "8-k", totalFilingsWanted=15)])
     # BaseTime()
     # print(len(G_filingListing))
