@@ -37,8 +37,7 @@ class SecCrawler(object):
                             self._SecFilingParams)
 
         #   Find and set Company CIK
-        r = requests.get(SecFindFilingUrl)
-        self._TotalN_Requests += 1
+        r = self.GetRequest(SecFindFilingUrl)
 
         reg = re.search("(CIK=)\w+", r.text)
         CIK = (reg.group(0).strip("CIK="))
@@ -65,9 +64,9 @@ class SecCrawler(object):
                         f"{filing.AccNum}")
 
         #   Send requests and set Filing and SGML HEAD Text
-        filingReq = requests.get(SecFilingUrl + ".txt",
+        filingReq = self.GetRequest(SecFilingUrl + ".txt",
                                  headers=self._headers, stream=True)
-        SgmlHeadReq = requests.get(SecFilingUrl + ".hdr.sgml",
+        SgmlHeadReq = self.GetRequest(SecFilingUrl + ".hdr.sgml",
                                    headers=self._headers, stream=True)
 
         filing.SetFilingText(filingReq.text)
@@ -81,6 +80,17 @@ class SecCrawler(object):
         df = df[(df["Filing Date"] >= startDate) &
                 (df["Filing Date"] <= endDate)]
         return df
+
+    def GetRequest(self, URL):
+        """Send URL request to SEC Edgar DB.
+
+            Makes sure that we do not send more than 10 requests per second.
+         """
+        request = requests.get(URL)
+        self._TotalN_Requests += 1
+        if self._TotalN_Requests % 10 == 0:
+            time.sleep(1)
+        return request
 
 
 class Filing(object):
