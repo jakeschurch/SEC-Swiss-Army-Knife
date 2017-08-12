@@ -185,10 +185,10 @@ def SetInterimListing(Listing: list):
     NUM_WORKERS = 4
 
     filingList = []
-
+    crawler = SecCrawler()
     for f in Listing:
         nIndex = f.totalFilingsWanted
-        SecCrawler().SetParamsForInitFiling(f)
+        crawler.SetParamsForInitFiling(f)
 
         while nIndex > 0:
             filingList.append(
@@ -199,7 +199,7 @@ def SetInterimListing(Listing: list):
 
     pool = Pool(NUM_WORKERS)
     for f in filingList:
-        pool.spawn(SecCrawler().FindFiling, f)
+        pool.spawn(crawler.FindFiling, f)
     start_time = time.time()
     pool.join()
 
@@ -234,8 +234,8 @@ def BaseTime():
 
 
 if __name__ == "__main__":
-    SetInterimListing([Filing("goog", "8-k", totalFilingsWanted=2)])
-    for f in G_filingListing:
-        print(f.AccNum)
+    SetInterimListing([Filing("goog", "8-k", totalFilingsWanted=5)])
+    # for f in G_filingListing:
+    #     print(f.AccNum)
     # BaseTime()
     # print(len(G_filingListing))
