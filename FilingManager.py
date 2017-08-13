@@ -52,13 +52,13 @@ class FilingManager(object):
             os.chdir(self.DEFAULT_DATA_PATH)
 
             #   Does Ticker dir exist?
-            tickerPath = os.path.join(self.DEFAULT_DATA_PATH + "\\"
-                                      + filing.ticker)
+            tickerPath = os.path.join(self.DEFAULT_DATA_PATH + "\\" +
+                                      filing.ticker)
             self.CheckMakeAndSetDir(tickerPath)
 
             #   Does Ticker\filingType dir exist?
-            filingTypePath = os.path.join(tickerPath + "\\"
-                                          + filing.FilingType)
+            filingTypePath = os.path.join(tickerPath + "\\" +
+                                          filing.FilingType)
             self.CheckMakeAndSetDir(filingTypePath)
 
             #   Does Ticker\filingType\AccNum dir exist?
@@ -77,13 +77,11 @@ class FilingManager(object):
 
 
 def TestingFilingManger():
-    googFiling = sc.Filing("goog", "8-k")
-    ibmFiling = sc.Filing("ibm", "8-k")
-    test = sc.SecCrawler()
-    test.FindFiling([googFiling, ibmFiling])
+    testListing = [sc.Filing("goog", "8-k", totalFilingsWanted=5)]
+    sc.SetInterimListing(testListing)
 
     foo = FilingManager()
-    foo.SaveFilingsInDir(sc.filingListing)
+    foo.SaveFilingsInDir(sc.G_filingListing)
 
 
 if __name__ == "__main__":
