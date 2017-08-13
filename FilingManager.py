@@ -1,8 +1,6 @@
-"""Store and manage filings in specified folders.
-
-@author: Jake
-"""
+"""Store and manage filings in specified folders."""
 # -*- coding: utf-8 -*-
+__author__ = "Jake Schurch"
 
 import os
 import SecCrawler as sc

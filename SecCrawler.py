@@ -1,8 +1,6 @@
-"""Crawl SEC Edgar DB and return filing information.
-
-@author: Jake
-"""
+"""Crawl SEC Edgar DB and return filing information."""
 # -*- coding: utf-8 -*-
+__author__ = "Jake Schurch"
 
 import requests
 import pandas as pd
