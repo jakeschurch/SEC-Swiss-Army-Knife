@@ -77,8 +77,8 @@ class SecCrawler(object):
     def GetRequest(self, URL, headers, stream):
         """Send URL request to SEC Edgar DB.
 
-            Makes sure that we do not send more than 10 requests per second.
-         """
+        Makes sure that we do not send more than 10 requests per second.
+        """
         request = requests.get(URL, headers=headers, stream=stream)
         self._TotalN_Requests += 1
         if self._TotalN_Requests % 10 == 0:
@@ -90,8 +90,9 @@ class Filing(object):
     _working_FilingTypes = ['10-k', '8-k']
 
     def __init__(self, ticker, FilingType,
-                 CIK=None, AccNum=None, FilingDate=None,
-                 N_filingWanted=1, totalFilingsWanted=1, FilingsDF=None):
+                 CIK=None, AccNum=None, AccNumW_oDashes=None,
+                 FilingDate=None, N_filingWanted=1,
+                 totalFilingsWanted=1, FilingsDF=None):
 
         if FilingType not in self._working_FilingTypes:
             raise ValueError("Invalid filing type")
@@ -100,18 +101,19 @@ class Filing(object):
             self.CIK = CIK
             self.FilingType = FilingType
             self.AccNum = AccNum
+            self.AccNumW_oDashes = AccNumW_oDashes
+            self.FilingDate = FilingDate
             self.N_filingWanted = N_filingWanted
-            self.AccNumW_oDashes = None
-            self.FilingText = None
-            self.SgmlHead = None
-            self.FilingDate = None
             self.totalFilingsWanted = totalFilingsWanted
             self.FilingsDF = FilingsDF
+            self.FilingText = None
+            self.SgmlHead = None
 
     def GetInitKwargs(self, N_filingWanted):
         self.FindAccNumAndFilingDate(N_filingWanted)
         return {"ticker": self.ticker, "FilingType": self.FilingType,
                 "CIK": self.CIK, "AccNum": self.AccNum,
+                "AccNumW_oDashes": self.AccNumW_oDashes,
                 "FilingDate": self.FilingDate}
 
     def SetFilingsDF(self, df):
@@ -135,7 +137,6 @@ class Filing(object):
 
         self.SetAccNum(AccNum.group(0).strip("Acc-no: "))
         self.SetFilingDate(self.FilingsDF["Filing Date"][self.N_filingWanted])
-
 
     def SetAccNum(self, AccNum):
         self.AccNum = AccNum
@@ -179,7 +180,11 @@ class FilingList(list):
 G_filingListing = FilingList()
 
 
-def SetInterimListing(Listing: list):
+def SetInterimListing(
+        Listing: list,
+        startDate=SecCrawler._20YearsAgo.isoformat(),
+        endDate=SecCrawler._Today.isoformat()):
+
     from gevent.pool import Pool
 
     NUM_WORKERS = 4
@@ -188,12 +193,11 @@ def SetInterimListing(Listing: list):
     crawler = SecCrawler()
     for f in Listing:
         nIndex = f.totalFilingsWanted
-        crawler.SetParamsForInitFiling(f)
+        crawler.SetParamsForInitFiling(f, startDate=startDate, endDate=endDate)
 
         while nIndex > 0:
             filingList.append(
-                Filing(
-                    **f.GetInitKwargs(nIndex))
+                Filing(**f.GetInitKwargs(nIndex))
             )
             nIndex -= 1
 
@@ -204,38 +208,21 @@ def SetInterimListing(Listing: list):
     pool.join()
 
     end_time = time.time()
-    print(f"Total run-time is: {end_time - start_time}")
+    print(f"Total run-time of SetInterimListing is: {end_time - start_time}")
 
 
-def SetListingForTesting(Listing: list):
-    raise Exception("Only for testing purposes")
-    filingList = []
+def TestPickling():
+    import pickle
+    SetInterimListing([Filing("goog", "8-k", totalFilingsWanted=5)])
 
-    for f in Listing:
-        nIndex = f.totalFilingsWanted
-        while nIndex > 0:
-            filingList.append(
-                Filing(*f.GetTickAndType(),
-                       N_filingWanted=nIndex))
-            nIndex -= 1
-    return filingList
+    # with open("testing.pickle", 'wb') as handle:
+    #     pickle.dump(G_filingListing, handle,
+    #                 protocol=pickle.HIGHEST_PROTOCOL)
 
-
-def BaseTime():
-    raise Exception("Only for testing purposes")
-    TestList = [Filing("goog", "8-k", totalFilingsWanted=15)]
-    Listings = SetListingForTesting(TestList)
-
-    start_time = time.time()
-    [SecCrawler().FindFiling(f) for f in Listings]
-
-    end_time = time.time()
-    print(end_time - start_time)
+    with open("testing.pickle", 'rb') as handle:
+        unserialized = pickle.load(handle)
+    print(len(unserialized))  # should be n totalFilingsWanted by x Companies
 
 
 if __name__ == "__main__":
-    SetInterimListing([Filing("goog", "8-k", totalFilingsWanted=5)])
-    # for f in G_filingListing:
-    #     print(f.AccNum)
-    # BaseTime()
-    # print(len(G_filingListing))
+    TestPickling()
