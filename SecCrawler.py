@@ -80,7 +80,7 @@ class SecCrawler(object):
         request = requests.get(URL, headers=headers, stream=stream)
         self._TotalN_Requests += 1
         if self._TotalN_Requests % 10 == 0:
-            time.sleep(1)
+            time.sleep(0.5)
         return request
 
 
@@ -209,18 +209,5 @@ def SetInterimListing(
     print(f"Total run-time of SetInterimListing is: {end_time - start_time}")
 
 
-def TestPickling():
-    import pickle
-    SetInterimListing([Filing("goog", "8-k", totalFilingsWanted=5)])
-
-    # with open("testing.pickle", 'wb') as handle:
-    #     pickle.dump(G_filingListing, handle,
-    #                 protocol=pickle.HIGHEST_PROTOCOL)
-
-    with open("testing.pickle", 'rb') as handle:
-        unserialized = pickle.load(handle)
-    print(len(unserialized))  # should be n totalFilingsWanted by x Companies
-
-
 if __name__ == "__main__":
-    TestPickling()
+    pass
