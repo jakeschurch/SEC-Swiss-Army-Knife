@@ -35,7 +35,7 @@ class SecCrawler(object):
 
         #   Find and set Company CIK
         r = self.GetRequest(SecFindFilingUrl, headers=self._headers,
-                            stream=True)
+                            stream=False)
 
         reg = re.search("(CIK=)\w+", r.text)
         CIK = (reg.group(0).strip("CIK="))
@@ -58,9 +58,9 @@ class SecCrawler(object):
 
         #   Send requests and set Filing and SGML HEAD Text
         filingReq = self.GetRequest(SecFilingUrl + ".txt",
-                                    headers=self._headers, stream=True)
+                                    headers=self._headers, stream=False)
         SgmlHeadReq = self.GetRequest(SecFilingUrl + ".hdr.sgml",
-                                      headers=self._headers, stream=True)
+                                      headers=self._headers, stream=False)
 
         filing.SetFilingText(filingReq.text)
         filing.SetSgmlHead(SgmlHeadReq.text)
@@ -210,4 +210,4 @@ def SetInterimListing(
 
 
 if __name__ == "__main__":
-    pass
+    SetInterimListing([Filing("amzn", "8-k", totalFilingsWanted=1)])

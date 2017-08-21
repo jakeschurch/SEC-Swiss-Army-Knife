@@ -8,7 +8,6 @@ import SecCrawler as sc
 
 class FilingManager(object):
     DEFAULT_DATA_PATH = fr"C:\Users\{os.getlogin()}\Desktop\Filings"
-    DEFAULT_SETUP_PATH = fr"C:\Users\{os.getlogin()}\Desktop\Filings\.Setup"
 
     def __init__(self, **kwargs):
         if os.name != "nt":
@@ -16,8 +15,6 @@ class FilingManager(object):
                             "are currently not supported!")
         if 'DEFAULT_DATA_PATH' in kwargs:
             self.DEFAULT_DATA_PATH = kwargs['DEFAULT_DATA_PATH']
-        if 'DEFAULT_SETUP_PATH' in kwargs:
-            self.DEFAULT_SETUP_PATH = kwargs['DEFAULT_SETUP_PATH']
 
     #   Directory Methods
     def MakeDir(self, DirName):

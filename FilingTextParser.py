@@ -2,7 +2,6 @@
 import SecCrawler as sc
 import re
 from bs4 import BeautifulSoup
-# TODO: remove page numbers, anything in a table, anything right aligned
 
 
 def GetItemsFromSGML(SgmlHead):
