@@ -7,7 +7,12 @@ import pandas as pd
 import re
 import datetime
 import time
+from gevent.pool import Pool
+import gevent
+from gevent import monkey; monkey.patch_all()
+from gevent.lock import BoundedSemaphore
 
+BSem = BoundedSemaphore(1)
 
 class SecCrawler(object):
     #   Variables for SEC Edgar URL requests
@@ -80,7 +85,11 @@ class SecCrawler(object):
         request = requests.get(URL, headers=headers, stream=stream)
         self._TotalN_Requests += 1
         if self._TotalN_Requests % 10 == 0:
-            time.sleep(0.5)
+            BSem.acquire(blocking=True, timeout=1)
+            time.sleep(1)
+            BSem.release()
+        gevent.sleep(0)
+
         return request
 
 
@@ -183,8 +192,6 @@ def SetInterimListing(
         startDate=SecCrawler._20YearsAgo.isoformat(),
         endDate=SecCrawler._Today.isoformat()):
 
-    from gevent.pool import Pool
-
     NUM_WORKERS = 4
 
     filingList = []
@@ -210,4 +217,7 @@ def SetInterimListing(
 
 
 if __name__ == "__main__":
-    SetInterimListing([Filing("amzn", "8-k", totalFilingsWanted=1)])
+    SetInterimListing([Filing("amzn", "8-k", totalFilingsWanted=31)])
+    # for f in G_filingListing:
+    #     print(f.FilingDate)
+    print(len(G_filingListing))
