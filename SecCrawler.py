@@ -6,7 +6,6 @@ import requests
 import pandas as pd
 import re
 import datetime
-import time
 from gevent.pool import Pool
 import gevent
 from gevent import monkey; monkey.patch_all()
@@ -85,9 +84,7 @@ class SecCrawler(object):
         request = requests.get(URL, headers=headers, stream=stream)
         self._TotalN_Requests += 1
         if self._TotalN_Requests % 10 == 0:
-            BSem.acquire(blocking=True, timeout=1)
-            time.sleep(1)
-            BSem.release()
+            gevent.sleep(1)
         gevent.sleep(0)
 
         return request
@@ -209,11 +206,7 @@ def SetInterimListing(
     pool = Pool(NUM_WORKERS)
     for f in filingList:
         pool.spawn(crawler.FindFiling, f)
-    start_time = time.time()
     pool.join()
-
-    end_time = time.time()
-    print(f"Total run-time of SetInterimListing is: {end_time - start_time}")
 
 
 if __name__ == "__main__":
