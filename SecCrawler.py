@@ -11,7 +11,6 @@ import gevent
 from gevent import monkey; monkey.patch_all()
 from gevent.lock import BoundedSemaphore
 
-BSem = BoundedSemaphore(1)
 
 class SecCrawler(object):
     #   Variables for SEC Edgar URL requests
