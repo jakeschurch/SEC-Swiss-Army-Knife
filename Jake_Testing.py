@@ -14,44 +14,49 @@ def FilingTextParser(filing):
     content = soup.find(['document', 'text'])
 
     items = GetItemsFromSGML(filing.SgmlHead)
-    print(items)
+
     cleanedHtml = CleanHtml(str(content))
     soup = BeautifulSoup(cleanedHtml, 'lxml')
     cleanedText = CleanText(soup.text)
 
-    for item in items:
-        if len(items) != 1 and item is not items[-1]:
-            EndStatement = items[items.index(item) + 1]
-            pattern = r'(Item StartHere\. [\s\S]+)(?: EndHere\.)'
-            pattern = pattern.replace('StartHere', item)
-            pattern = pattern.replace('EndHere', 'Item ' + EndStatement)
-            chosenOne = re.search(pattern, cleanedText, flags=re.IGNORECASE)
-
-            newTry = chosenOne.group(0)
-            print(newTry)
-        else:
-            EndStatement = "PAGE_BREAK"
-            pattern = r'(Item StartHere\. [\s\S]+?)(?: EndHere )'
-            pattern = pattern.replace('StartHere', item)
-            pattern = pattern.replace('EndHere', EndStatement)
-            chosenOne = re.search(pattern, cleanedText, flags=re.IGNORECASE)
-
-            newTry = chosenOne.group(0)
-            print(newTry)
+    # for item in items:
+    #     if len(items) != 1 and item is not items[-1]:
+    #         EndStatement = items[items.index(item) + 1]
+    #         pattern = r'(Item StartHere\. [\s\S]+)(?: EndHere\.)'
+    #         pattern = pattern.replace('StartHere', item)
+    #         pattern = pattern.replace('EndHere', 'Item ' + EndStatement)
+    #         chosenOne = re.search(pattern, cleanedText, flags=re.IGNORECASE)
+    #
+    #         newTry = chosenOne.group(0)
+    #         print(newTry)
+    #     else:
+    #         EndStatement = "PAGE_BREAK"
+    #         pattern = r'(Item StartHere\. [\s\S]+?)(?: EndHere )'
+    #         pattern = pattern.replace('StartHere', item)
+    #         pattern = pattern.replace('EndHere', EndStatement)
+    #         chosenOne = re.search(pattern, cleanedText, flags=re.IGNORECASE)
+    #
+    #         newTry = chosenOne.group(0)
+    #         print(newTry)
 
     with open("parseFilingTesting.txt", 'w+') as f:
-        for char in cleanedText:
-                try:
-                    f.write(char)
-                except UnicodeEncodeError:
-                    pass
-        # f.write(newTry)
+        # for char in cleanedText:
+        #         try:
+        #             f.write(char)
+        #         except UnicodeEncodeError:
+        #             pass
+        f.write(cleanedText)
 
 
 def CleanHtml(markup):
     markup = markup.replace('</font>', " </font>")
-    markup = markup.replace("</div>", " </div>")
-
+    markup = markup.replace("</div>", "\n</div>")
+    markup = markup.replace("</hr>", "\n</hr>")
+    markup = markup.replace("Table of Contents", "")
+    markup = re.sub(r'(<p [\w\s\S]+center?[\w\s\S]+?>?)', '', markup)
+    print('past first re')
+    markup = re.sub(r'(<div [\w\s\S]+?center?[\w\s\S]+?>)', '', markup)
+    print('past second re')
     return markup
 
 
@@ -65,7 +70,7 @@ def CleanText(text):
 
 if __name__ == "__main__":
     # req = requests.get('https://www.sec.gov/Archives/edgar/data/1652044/000165204417000008/goog10-kq42016.htm')
-    testListing = [sc.Filing("amzn", "8-k", totalFilingsWanted=1)]
+    testListing = [sc.Filing("amzn", "10-k", totalFilingsWanted=1)]
     sc.SetInterimListing(testListing)
 
     FilingTextParser(sc.G_filingListing[0])
