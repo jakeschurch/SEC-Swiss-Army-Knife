@@ -4,10 +4,10 @@ from bs4 import BeautifulSoup
 #8-K test URL
 #url = "https://www.sec.gov/Archives/edgar/data/354950/000035495017000017/hd_8kx05242017.htm"
 #10-K Test URLs
-#url ="https://www.sec.gov/Archives/edgar/data/0001652044/000165204417000008/goog10-kq42016.htm"
+url ="https://www.sec.gov/Archives/edgar/data/0001652044/000165204417000008/goog10-kq42016.htm"
 #url = "https://www.sec.gov/Archives/edgar/data/936468/000119312517210489/d410677d11k.htm"
 #10-Q URL
-url = "https://www.sec.gov/Archives/edgar/data/354950/000035495017000014/hd_10qx04302017.htm"
+#url = "https://www.sec.gov/Archives/edgar/data/354950/000035495017000014/hd_10qx04302017.htm"
 #11-K Test URL
 #url = "https://www.sec.gov/Archives/edgar/data/354950/000035495017000026/hd_prx11kx12312016.htm"
 
@@ -119,8 +119,10 @@ def MakeADict(lists):
 
 
 TableOfContents = MakeADict(TOC)
+print(TableOfContents)
+
 
 def FindStartPage(Section):
-    return TableOfContents.get(Section)
+    return TableOfContents.get(Section, "Section Does Not Exit")
 
-print(FindStartPage("Item1."))
+print(FindStartPage("Risk Factors"))
