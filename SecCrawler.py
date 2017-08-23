@@ -3,14 +3,13 @@
 __author__ = "Jake Schurch"
 
 import gevent
-from gevent import monkey
-monkey.patch_all()
+from gevent import monkey; monkey.patch_all()
 import requests
 import pandas as pd
 import re
 import datetime
 from gevent.pool import Pool
-
+from gevent.lock import BoundedSemaphore
 
 
 class SecCrawler(object):
