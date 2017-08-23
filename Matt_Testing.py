@@ -29,6 +29,7 @@ def CleanText(text):
 cleanText = CleanText(str(soup))
 soup = BeautifulSoup(cleanText, 'lxml')
 
+# For finding number of pages and page locations
 
 def Pages(text):
     PageNumToHR = []
@@ -42,7 +43,7 @@ def Pages(text):
             HRTags = HRTags + 1
             try:
                 if pageBreak.previous_sibling.contents[0].text:
-                    print(pageBreak.previous_sibling.contents[0].text)
+                    #print(pageBreak.previous_sibling.contents[0].text)
                     NumPages = NumPages + 1
                     PageNumToHR.append([HRTags,NumPages])
                     mydict.update({str(NumPages): str(HRTags)})
@@ -52,7 +53,7 @@ def Pages(text):
             except:
                 try:
                     if int(pageBreak.find_previous_sibling('p').find_previous_sibling('p').text):
-                        print("Longer: " + str(pageBreak.find_previous_sibling('p').find_previous_sibling('p').text))
+                        #print("Longer: " + str(pageBreak.find_previous_sibling('p').find_previous_sibling('p').text))
                         NumPages = NumPages + 1
                         PageNumToHR.append([HRTags,NumPages])
                         mydict.update({str(NumPages): str(HRTags)})
@@ -62,7 +63,11 @@ def Pages(text):
                 except:
                     i = i + 1
                     pass
+    return mydict
+pageLoc = Pages(soup)
 
+
+# Start of whats needed for Getting Table Of Contents
 
 def GetTableOfContents(text):
     tables = text('table')
@@ -119,4 +124,11 @@ print(TableOfContents)
 def FindStartPage(Section):
     return TableOfContents.get(Section, "Section Does Not Exit")
 
-print(FindStartPage("Risk Factors"))
+def SectionPageBreaks(SectionName):
+    pageNum = FindStartPage(SectionName)
+    return pageLoc.get(str(pageNum), "Not Found")
+
+SectionName = "Risk Factors"
+
+print("PageNum: " + str(FindStartPage(SectionName)))
+print("StartingPosition: " + str(SectionPageBreaks(SectionName)) + " HR Tags in")
