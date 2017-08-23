@@ -26,12 +26,6 @@ def CleanText(text):
 
     return text
 
-def CompanyName(text):
-    ele=soup('font', style="font-family:Arial;font-size:24pt;font-weight:bold;")
-    foo = ele[0].contents[0]
-    return foo
-
-
 cleanText = CleanText(str(soup))
 soup = BeautifulSoup(cleanText, 'lxml')
 
