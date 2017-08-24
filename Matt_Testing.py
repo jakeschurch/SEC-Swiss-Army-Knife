@@ -127,16 +127,18 @@ print(TableOfContents)
 
 def FindStartPage(Section):
     """Finding Start Page of Given Section."""
-    return TableOfContents.get(Section, "Section Does Not Exit")
+    StartPage = TableOfContents.get(Section, "Section Does Not Exit")
+    print(f'Page Number is {StartPage}')
+    return StartPage
 
 
 def SectionPageBreaks(SectionName):
     """Finding Location of Start Page of Given Section."""
     pageNum = FindStartPage(SectionName)
-    return pageLoc.get(str(pageNum), "Not Found")
+    HR_PassedTags = pageLoc.get(str(pageNum), "Not Found")
+    print(f'Starting Position {HR_PassedTags} HR tags in')
 
 SectionName = allSections[1]
 # SectionName = "Risk Factors"
 
-print("PageNum: " + str(FindStartPage(SectionName)))
-print("StartingPosition: " + str(SectionPageBreaks(SectionName)) + " HR Tags in")
+SectionPageBreaks(SectionName)
