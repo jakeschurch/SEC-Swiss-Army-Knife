@@ -97,7 +97,7 @@ def GetTableOfContents(text):
 
 TOC = GetTableOfContents(soup)
 
-allSections = []
+G_allSections = []
 
 
 def MakeADict(lists):
@@ -117,7 +117,7 @@ def MakeADict(lists):
                 myKey.append(item)
         for section in myKey:
             newDict.update({str(section): pageNum})
-            allSections.append(section)
+            G_allSections.append(section)
     return newDict
 
 
@@ -135,7 +135,7 @@ def SectionPageBreaks(SectionName):
     pageNum = FindStartPage(SectionName)
     return pageLoc.get(str(pageNum), "Not Found")
 
-SectionName = allSections[1]
+SectionName = G_allSections[1]
 # SectionName = "Risk Factors"
 
 print("PageNum: " + str(FindStartPage(SectionName)))
