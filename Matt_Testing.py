@@ -4,12 +4,13 @@ from bs4 import BeautifulSoup
 # 8-K test URL
 # url = "https://www.sec.gov/Archives/edgar/data/354950/000035495017000017/hd_8kx05242017.htm"
 # 10-K Test URLs
-url = "https://www.sec.gov/Archives/edgar/data/0001652044/000165204417000008/goog10-kq42016.htm"
-# url = "https://www.sec.gov/Archives/edgar/data/936468/000119312517210489/d410677d11k.htm"
+# url = "https://www.sec.gov/Archives/edgar/data/0001652044/000165204417000008/goog10-kq42016.htm"
 # 10-Q URL
 # url = "https://www.sec.gov/Archives/edgar/data/354950/000035495017000014/hd_10qx04302017.htm"
 # 11-K Test URL
 # url = "https://www.sec.gov/Archives/edgar/data/354950/000035495017000026/hd_prx11kx12312016.htm"
+url = "https://www.sec.gov/Archives/edgar/data/936468/000119312517210489/d410677d11k.htm"
+
 
 r = requests.get(url, stream=True)
 soup = BeautifulSoup(r.content, 'lxml')
@@ -21,6 +22,8 @@ def CleanText(text):
     text = text.replace('ý', '`check_marked`')
     text = text.replace('• \n', '')
     text = text.replace(u'\xa0', u'')
+    text = text.replace(u'\x96', u'-')
+    text = text.replace(u'\n', ' ')
 
     return text
 
@@ -79,8 +82,15 @@ def GetTableOfContents(text):
     for table in tables:
         if table.find('a'):
             for a in table.findAll('a'):
-                allText.append(a.text)
-
+                tr = a.find_parent('tr')
+                for string in tr.stripped_strings:
+                    piece = string.split('-')
+                    try:
+                        if int(piece[0]) and int(piece[1]):
+                            string = piece[0]
+                    except Exception:
+                        pass
+                    allText.append(string)
     for phrase in allText:
         i = i + 1
         try:
@@ -149,13 +159,8 @@ class SecLocs(object):
         """Findng Section Name of Next Section."""
         return G_allSections[G_allSections.index(SectionName) + 1]
 
-    def printingThings(self):
-        print(self.SectionName, self.StartPage, self.NextSectionName, self.NextSectionStartLoc)
 
+SectionName = G_allSections[2]
 
-SectionName = G_allSections[5]
-# SectionName = "Risk Factors"
 sl = SecLocs(SectionName)
 print(sl.SectionName, sl.StartEndPages, sl.StartEndLocs, sl.NextSectionName)
-#NextSection = NextSectionName(SectionName)
-#SectionPageBreaks(SectionName)
