@@ -137,6 +137,7 @@ def SectionPageBreaks(SectionName):
     pageNum = FindStartPage(SectionName)
     HR_PassedTags = pageLoc.get(str(pageNum), "Not Found")
     print(f'Starting Position {HR_PassedTags} HR tags in')
+    return HR_PassedTags
 
 SectionName = G_allSections[1]
 # SectionName = "Risk Factors"
