@@ -121,25 +121,41 @@ def MakeADict(lists):
     return newDict
 
 
-TableOfContents = MakeADict(TOC)
-print(TableOfContents)
+G_TableOfContents = MakeADict(TOC)
 
 
-def FindStartPage(Section):
-    """Finding Start Page of Given Section."""
-    StartPage = TableOfContents.get(Section, "Section Does Not Exit")
-    print(f'Page Number is {StartPage}')
-    return StartPage
+class SecLocs(object):
+
+    def __init__(self, SectionName):
+        self.SectionName = SectionName
+        self.StartPage = self.FindStartPage(SectionName)
+        self.StartLoc = self.SectionPageBreaks(self.StartPage)
+        self.NextSectionName = self.NextSectionName(SectionName)
+        self.NextSectionStartPage = self.FindStartPage(self.NextSectionName)
+        self.NextSectionStartLoc = self.SectionPageBreaks(self.NextSectionStartPage)
+        self.StartEndPages = [self.StartPage, self.NextSectionStartPage]
+        self.StartEndLocs = [self.StartLoc, self.NextSectionStartLoc]
+
+    def FindStartPage(self, SectionName):
+        """Finding Start Page of Given Section."""
+        return G_TableOfContents.get(SectionName, "Section Does Not Exit")
+
+    def SectionPageBreaks(self, StartPage):
+        """Finding Location of Start Page of Given Section."""
+        HR_PassedTags = pageLoc.get(str(StartPage), "Not Found")
+        return int(HR_PassedTags)
+
+    def NextSectionName(self, SectionName):
+        """Findng Section Name of Next Section."""
+        return G_allSections[G_allSections.index(SectionName) + 1]
+
+    def printingThings(self):
+        print(self.SectionName, self.StartPage, self.NextSectionName, self.NextSectionStartLoc)
 
 
-def SectionPageBreaks(SectionName):
-    """Finding Location of Start Page of Given Section."""
-    pageNum = FindStartPage(SectionName)
-    HR_PassedTags = pageLoc.get(str(pageNum), "Not Found")
-    print(f'Starting Position {HR_PassedTags} HR tags in')
-    return HR_PassedTags
-
-SectionName = G_allSections[1]
+SectionName = G_allSections[5]
 # SectionName = "Risk Factors"
-
-SectionPageBreaks(SectionName)
+sl = SecLocs(SectionName)
+print(sl.SectionName, sl.StartEndPages, sl.StartEndLocs, sl.NextSectionName)
+#NextSection = NextSectionName(SectionName)
+#SectionPageBreaks(SectionName)
