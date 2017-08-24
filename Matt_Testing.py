@@ -97,6 +97,8 @@ def GetTableOfContents(text):
 
 TOC = GetTableOfContents(soup)
 
+allSections = []
+
 
 def MakeADict(lists):
     """Creating Dictionary of Table of Contents Sections and Pages."""
@@ -115,6 +117,7 @@ def MakeADict(lists):
                 myKey.append(item)
         for section in myKey:
             newDict.update({str(section): pageNum})
+            allSections.append(section)
     return newDict
 
 
@@ -132,7 +135,8 @@ def SectionPageBreaks(SectionName):
     pageNum = FindStartPage(SectionName)
     return pageLoc.get(str(pageNum), "Not Found")
 
-SectionName = "Risk Factors"
+SectionName = allSections[1]
+# SectionName = "Risk Factors"
 
 print("PageNum: " + str(FindStartPage(SectionName)))
 print("StartingPosition: " + str(SectionPageBreaks(SectionName)) + " HR Tags in")
