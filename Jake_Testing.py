@@ -13,57 +13,60 @@ def FilingTextParser(filing):
     soup = BeautifulSoup(filing.FilingText, "lxml")
     content = soup.find(['document', 'text'])
 
-    items = GetItemsFromSGML(filing.SgmlHead)
-
-    cleanedHtml = CleanHtml(str(content))
-    soup = BeautifulSoup(cleanedHtml, 'lxml')
-    cleanedText = CleanText(soup.text)
-
-    # for item in items:
-    #     if len(items) != 1 and item is not items[-1]:
-    #         EndStatement = items[items.index(item) + 1]
-    #         pattern = r'(Item StartHere\. [\s\S]+)(?: EndHere\.)'
-    #         pattern = pattern.replace('StartHere', item)
-    #         pattern = pattern.replace('EndHere', 'Item ' + EndStatement)
-    #         chosenOne = re.search(pattern, cleanedText, flags=re.IGNORECASE)
+    # with open('testHTML.txt', 'r') as f:
+    #     text = f.read()
     #
-    #         newTry = chosenOne.group(0)
-    #         print(newTry)
-    #     else:
-    #         EndStatement = "PAGE_BREAK"
-    #         pattern = r'(Item StartHere\. [\s\S]+?)(?: EndHere )'
-    #         pattern = pattern.replace('StartHere', item)
-    #         pattern = pattern.replace('EndHere', EndStatement)
-    #         chosenOne = re.search(pattern, cleanedText, flags=re.IGNORECASE)
-    #
-    #         newTry = chosenOne.group(0)
-    #         print(newTry)
+    # soup = BeautifulSoup(text, 'lxml')
 
-    with open("parseFilingTesting.txt", 'w+') as f:
-        # for char in cleanedText:
-        #         try:
-        #             f.write(char)
-        #         except UnicodeEncodeError:
-        #             pass
-        f.write(cleanedText)
+    findTags = content.find_all(True)
+
+    for tag in findTags:
+        if tag.name == 'table':
+            for descendant in tag.descendants:
+                try:
+                    if ('style' in descendant.attrs) and ('background-color' in descendant.attrs['style']):
+                        tag.decompose()
+                        break
+                except AttributeError:
+                    pass
+        elif tag.attrs is not None and 'style' in tag.attrs and 'text-align:center' in tag.attrs['style']:
+            tag.decompose()
+        elif tag.name == 'hr':
+            tag.decompose()
+        else:
+            pass
+
+    for tag in findTags:
+        if tag.name == 'hr':
+            print(True)
+
+    notCenteredHTMLdoc = ''.join([str(tag) for tag in findTags])
+
+    CleanedNotCenteredHTML = CleanHtml(notCenteredHTMLdoc)
+
+    CleanedSoup = BeautifulSoup(CleanedNotCenteredHTML, 'lxml')
+
+    CleanedText = CleanText(CleanedSoup.text)
+
+    with open('parseFilingTesting.txt', 'w+') as f:
+        f.write(CleanedText)
 
 
 def CleanHtml(markup):
     markup = markup.replace('</font>', " </font>")
     markup = markup.replace("</div>", "\n</div>")
-    markup = markup.replace("</hr>", "\n</hr>")
     markup = markup.replace("Table of Contents", "")
-    markup = re.sub(r'(<p [\w\s\S]+center?[\w\s\S]+?>?)', '', markup)
-    print('past first re')
-    markup = re.sub(r'(<div [\w\s\S]+?center?[\w\s\S]+?>)', '', markup)
-    print('past second re')
+
     return markup
 
 
 def CleanText(text):
-    text = text.replace('\u200b', " ")
+    text = text.replace('\u200b', "")
     text = text.replace('ý', '`check_marked`')
-    text = text.replace('• \n', '')
+    text = text.replace('• \n', '•')
+    text = re.sub(r'[^\x00-\x7f]', r' ', text)
+    text = re.sub(r'^\d+ $', r'', text, flags=re.MULTILINE)
+    text = re.sub(r'\n\s+\n\s+\n\s+', '\n\n', text)
 
     return text
 
