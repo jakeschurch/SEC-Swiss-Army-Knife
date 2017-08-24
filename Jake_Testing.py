@@ -72,7 +72,6 @@ def CleanText(text):
 
 
 if __name__ == "__main__":
-    # req = requests.get('https://www.sec.gov/Archives/edgar/data/1652044/000165204417000008/goog10-kq42016.htm')
     testListing = [sc.Filing("amzn", "10-k", totalFilingsWanted=1)]
     sc.SetInterimListing(testListing)
 
