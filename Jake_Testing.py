@@ -38,9 +38,6 @@ def foo(bar: int, buz: int):
     return int3
 
 
-foo("hello", "world")
-
-
 def GetItemsFromSGML(SgmlHead):
     items = re.findall(r'(?:\<ITEMS\>)(\d{1}\.\d{2})', SgmlHead)
     return items
@@ -64,16 +61,15 @@ def CleanTextMarkup(text: str):
     return text
 
 
-def GetCleanTags(HTML_Entity: bs4.element.ResultSet) -> 'ResultSet \
-        not containing heavily formatted html tags':
+def GetCleanTags(HTML_Entity: bs4.element.ResultSet) -> list:
 
     FoundTags = HTML_Entity.find_all(True, recursive=False)
     for _tag in FoundTags:
         if _tag.name == 'table':
-            for descendant in _tag.descendants:
+            for _descendant in _tag.descendants:
                 try:
-                    if ('style' in descendant.attrs and
-                            'background-color' in descendant.attrs['style']):
+                    if ('style' in _descendant.attrs and
+                            'background-color' in _descendant.attrs['style']):
                         _tag.clear()
                         _tag.decompose()
                         break
@@ -95,12 +91,22 @@ def GetCleanTags(HTML_Entity: bs4.element.ResultSet) -> 'ResultSet \
             _tag.decompose()
 
         else:
-            pass
+            try:
+                for _descendant in _tag.descendants:
+                    try:
+                        if ('style' in _descendant.attrs and 'background-color'
+                                in _descendant.attrs['style']):
+                            _descendant.clear()
+                            _descendant.decompose()
+                    except AttributeError:
+                        pass
+            except AttributeError:
+                pass
 
     return FoundTags
 
 
-def FilingTextParser(filing: sc.Filing) -> 'raw filing text':
+def FilingTextParser(filing: sc.Filing):
 
     _Content = BeautifulSoup(filing.FilingText, "lxml").find(['document',
                                                              'text'])
@@ -118,15 +124,21 @@ def FilingTextParser(filing: sc.Filing) -> 'raw filing text':
     return CleanText
 
 
-def func():
-    pass
+if __name__ == "__main__":
 
-'''d = globals().copy()
+    sc.SetInterimListing([sc.Filing("goog", "10-k", totalFilingsWanted=1)])
+    testFiling = sc.G_filingListing[0]
+    FilingTextParser(testFiling)
 
-print(datetime.datetime.now())
+    def func():
+        pass
 
-for (item, val) in d.items():
-    if type(d[item]) == type(func):
-        globals()[item] = CheckInputTypes(d[item])
+    '''d = globals().copy()
 
-foo(bar='hello', buz='world')'''
+    print(datetime.datetime.now())
+
+    for (item, val) in d.items():
+        if type(d[item]) == type(func):
+            globals()[item] = CheckInputTypes(d[item])
+
+    foo(bar='hello', buz='world')'''
