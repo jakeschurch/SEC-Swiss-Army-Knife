@@ -6,12 +6,12 @@ import re
 from bs4 import BeautifulSoup
 
 
-def GetItemsFromSGML(SgmlHead):
+def GetItemsFromSGML(SgmlHead: sc.SgmlHead):
     items = re.findall(r'(?:\<ITEMS\>)(\d{1}\.\d{2})', SgmlHead)
     return items
 
 
-def CleanHtmlMarkup(markup):
+def CleanHtmlMarkup(markup: BeautifulSoup.find_all):
     markup = markup.replace('</font>', " </font>")
     markup = markup.replace("</div>", "\n</div>")
     markup = markup.replace("Table of Contents", "")
@@ -19,7 +19,7 @@ def CleanHtmlMarkup(markup):
     return markup
 
 
-def CleanTextMarkup(text):
+def CleanTextMarkup(text: str):
     text = text.replace('\u200b', "")
     text = text.replace('• \n', '•')
     text = re.sub(r'[^\x00-\x7f]', r' ', text)
@@ -29,7 +29,7 @@ def CleanTextMarkup(text):
     return text
 
 
-def GetCleanTags(HTML_Entity):
+def GetCleanTags(HTML_Entity: BeautifulSoup.find):
     FoundTags = HTML_Entity.find_all(True, recursive=False)
     for _tag in FoundTags:
         if _tag.name == 'table':
@@ -63,7 +63,7 @@ def GetCleanTags(HTML_Entity):
     return FoundTags
 
 
-def FilingTextParser(filing):
+def FilingTextParser(filing: sc.Filing):
     _content = BeautifulSoup(filing.FilingText, "lxml").find(['document',
                                                              'text'])
     _CleanTags = GetCleanTags(_content)
