@@ -64,9 +64,9 @@ def GetCleanTags(HTML_Entity):
 
 
 def FilingTextParser(filing):
-    content = BeautifulSoup(filing.FilingText, "lxml").find(['document',
+    _content = BeautifulSoup(filing.FilingText, "lxml").find(['document',
                                                              'text'])
-    _CleanTags = GetCleanTags(content)
+    _CleanTags = GetCleanTags(_content)
 
     _CleanHtml = CleanHtmlMarkup(
         ''.join(str(_tag) for _tag in _CleanTags))
