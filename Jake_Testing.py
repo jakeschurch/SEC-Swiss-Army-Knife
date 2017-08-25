@@ -5,6 +5,40 @@ import SecCrawler as sc
 import re
 import bs4
 from bs4 import BeautifulSoup
+import copy
+from datetime import datetime
+
+
+def CheckInputTypes(func):
+    def wrapper(*args, **kwargs):
+
+        for arg in args:
+            ArgValue = next(iter(locals()['args']))
+            ArgParamType = next(iter(func.__annotations__.keys()))
+
+            if type(ArgValue) != func.__annotations__[ArgParamType]:
+                raise TypeError(
+                    "Arg: '{0}' in {1}() is not of type: {2}".format(
+                        ArgParamType, func.__name__,
+                        func.__annotations__[ArgParamType]))
+
+        for kwarg in kwargs:
+            if type(locals()['kwargs'][kwarg]) != func.__annotations__[kwarg]:
+                raise TypeError(
+                    "Kwarg: '{0}' in {1}() is not of type: {2}").format(
+                        kwarg, func.__name__,
+                        func.__annotations__[kwarg])
+        return func(*args, **kwargs)
+    return wrapper
+
+
+@CheckInputTypes
+def foo(bar: int, buz: int):
+    int3 = bar + buz
+    return int3
+
+
+foo("hello", "world")
 
 
 def GetItemsFromSGML(SgmlHead):
@@ -30,7 +64,9 @@ def CleanTextMarkup(text: str):
     return text
 
 
-def GetCleanTags(HTML_Entity: bs4.element.ResultSet):
+def GetCleanTags(HTML_Entity: bs4.element.ResultSet) -> 'ResultSet \
+        not containing heavily formatted html tags':
+
     FoundTags = HTML_Entity.find_all(True, recursive=False)
     for _tag in FoundTags:
         if _tag.name == 'table':
@@ -64,10 +100,11 @@ def GetCleanTags(HTML_Entity: bs4.element.ResultSet):
     return FoundTags
 
 
-def FilingTextParser(filing: sc.Filing):
+def FilingTextParser(filing: sc.Filing) -> 'raw filing text':
+
     _Content = BeautifulSoup(filing.FilingText, "lxml").find(['document',
                                                              'text'])
-    _CleanTags = GetCleanTags(_Content)
+    _CleanTags = GetCleanTags(HTML_Entity=_Content)
 
     _CleanHtml = CleanHtmlMarkup(
         ''.join(str(_tag) for _tag in _CleanTags))
@@ -81,8 +118,15 @@ def FilingTextParser(filing: sc.Filing):
     return CleanText
 
 
-if __name__ == "__main__":
-    testListing = [sc.Filing("goog", "10-k", totalFilingsWanted=1)]
-    sc.SetInterimListing(testListing)
+def func():
+    pass
 
-    FilingTextParser(sc.G_filingListing[0])
+'''d = globals().copy()
+
+print(datetime.datetime.now())
+
+for (item, val) in d.items():
+    if type(d[item]) == type(func):
+        globals()[item] = CheckInputTypes(d[item])
+
+foo(bar='hello', buz='world')'''
