@@ -3,6 +3,7 @@ __author__ = "Jake Schurch"
 
 import SecCrawler as sc
 import re
+import bs4
 from bs4 import BeautifulSoup
 
 
@@ -11,7 +12,7 @@ def GetItemsFromSGML(SgmlHead):
     return items
 
 
-def CleanHtmlMarkup(markup: BeautifulSoup.find_all):
+def CleanHtmlMarkup(markup: bs4.element.ResultSet):
     markup = markup.replace('</font>', " </font>")
     markup = markup.replace("</div>", "\n</div>")
     markup = markup.replace("Table of Contents", "")
@@ -29,7 +30,7 @@ def CleanTextMarkup(text: str):
     return text
 
 
-def GetCleanTags(HTML_Entity: BeautifulSoup.find):
+def GetCleanTags(HTML_Entity: bs4.element.ResultSet):
     FoundTags = HTML_Entity.find_all(True, recursive=False)
     for _tag in FoundTags:
         if _tag.name == 'table':
