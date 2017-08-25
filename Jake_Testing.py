@@ -6,7 +6,7 @@ import re
 from bs4 import BeautifulSoup
 
 
-def GetItemsFromSGML(SgmlHead: sc.SgmlHead):
+def GetItemsFromSGML(SgmlHead):
     items = re.findall(r'(?:\<ITEMS\>)(\d{1}\.\d{2})', SgmlHead)
     return items
 
@@ -64,9 +64,9 @@ def GetCleanTags(HTML_Entity: BeautifulSoup.find):
 
 
 def FilingTextParser(filing: sc.Filing):
-    _content = BeautifulSoup(filing.FilingText, "lxml").find(['document',
+    _Content = BeautifulSoup(filing.FilingText, "lxml").find(['document',
                                                              'text'])
-    _CleanTags = GetCleanTags(_content)
+    _CleanTags = GetCleanTags(_Content)
 
     _CleanHtml = CleanHtmlMarkup(
         ''.join(str(_tag) for _tag in _CleanTags))
@@ -81,7 +81,7 @@ def FilingTextParser(filing: sc.Filing):
 
 
 if __name__ == "__main__":
-    testListing = [sc.Filing("amzn", "10-k", totalFilingsWanted=1)]
+    testListing = [sc.Filing("goog", "10-k", totalFilingsWanted=1)]
     sc.SetInterimListing(testListing)
 
     FilingTextParser(sc.G_filingListing[0])
