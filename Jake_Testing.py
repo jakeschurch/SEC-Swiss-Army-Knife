@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+__author__ = "Jake Schurch"
+
 import SecCrawler as sc
 import re
 from bs4 import BeautifulSoup
@@ -9,50 +11,7 @@ def GetItemsFromSGML(SgmlHead):
     return items
 
 
-def FilingTextParser(filing):
-    soup = BeautifulSoup(filing.FilingText, "lxml")
-    content = soup.find(['document', 'text'])
-
-    # with open('testHTML.txt', 'r') as f:
-    #     text = f.read()
-    #
-    # soup = BeautifulSoup(text, 'lxml')
-
-    findTags = content.find_all(True)
-
-    for tag in findTags:
-        if tag.name == 'table':
-            for descendant in tag.descendants:
-                try:
-                    if ('style' in descendant.attrs) and ('background-color' in descendant.attrs['style']):
-                        tag.decompose()
-                        break
-                except AttributeError:
-                    pass
-        elif tag.attrs is not None and 'style' in tag.attrs and 'text-align:center' in tag.attrs['style']:
-            tag.decompose()
-        elif tag.name == 'hr':
-            tag.decompose()
-        else:
-            pass
-
-    for tag in findTags:
-        if tag.name == 'hr':
-            print(True)
-
-    notCenteredHTMLdoc = ''.join([str(tag) for tag in findTags])
-
-    CleanedNotCenteredHTML = CleanHtml(notCenteredHTMLdoc)
-
-    CleanedSoup = BeautifulSoup(CleanedNotCenteredHTML, 'lxml')
-
-    CleanedText = CleanText(CleanedSoup.text)
-
-    with open('parseFilingTesting.txt', 'w+') as f:
-        f.write(CleanedText)
-
-
-def CleanHtml(markup):
+def CleanHtmlMarkup(markup):
     markup = markup.replace('</font>', " </font>")
     markup = markup.replace("</div>", "\n</div>")
     markup = markup.replace("Table of Contents", "")
@@ -60,15 +19,65 @@ def CleanHtml(markup):
     return markup
 
 
-def CleanText(text):
+def CleanTextMarkup(text):
     text = text.replace('\u200b', "")
-    text = text.replace('ý', '`check_marked`')
     text = text.replace('• \n', '•')
     text = re.sub(r'[^\x00-\x7f]', r' ', text)
     text = re.sub(r'^\d+ $', r'', text, flags=re.MULTILINE)
     text = re.sub(r'\n\s+\n\s+\n\s+', '\n\n', text)
 
     return text
+
+
+def GetCleanTags(HTML_Entity):
+    FoundTags = HTML_Entity.find_all(True, recursive=False)
+    for _tag in FoundTags:
+        if _tag.name == 'table':
+            for descendant in _tag.descendants:
+                try:
+                    if ('style' in descendant.attrs and
+                            'background-color' in descendant.attrs['style']):
+                        _tag.clear()
+                        _tag.decompose()
+                        break
+                except AttributeError:
+                    pass
+
+        elif (_tag.attrs is not None and
+              'style' in _tag.attrs and
+              'text-align:center' in _tag.attrs['style']):
+
+            if _tag.string == '' or _tag.string is None:
+                pass
+            else:
+                _tag.clear()
+                _tag.decompose()
+
+        elif _tag.name == 'hr':
+            _tag.clear()
+            _tag.decompose()
+
+        else:
+            pass
+
+    return FoundTags
+
+
+def FilingTextParser(filing):
+    content = BeautifulSoup(filing.FilingText, "lxml").find(['document',
+                                                             'text'])
+    _CleanTags = GetCleanTags(content)
+
+    _CleanHtml = CleanHtmlMarkup(
+        ''.join(str(_tag) for _tag in _CleanTags))
+
+    CleanText = CleanTextMarkup(
+        BeautifulSoup(_CleanHtml, 'lxml').text)
+
+    with open('parseFilingTesting.txt', 'w+') as f:
+        f.write(CleanText)
+
+    return CleanText
 
 
 if __name__ == "__main__":
