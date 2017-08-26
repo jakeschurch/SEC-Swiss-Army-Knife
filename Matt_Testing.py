@@ -69,7 +69,6 @@ def Pages(text):
     return mydict
 pageLoc = Pages(soup)
 
-
 # Start of whats needed for Getting Table Of Contents
 
 def GetTableOfContents(text):
@@ -105,6 +104,7 @@ def GetTableOfContents(text):
             pass
     return index
 
+
 TOC = GetTableOfContents(soup)
 
 G_allSections = []
@@ -132,6 +132,35 @@ def MakeADict(lists):
 
 
 G_TableOfContents = MakeADict(TOC)
+
+
+class Section(object):
+
+    def __init__(self, SectionName, SectionStartPage):
+        self.SectionName = SectionName
+        self.SectionStartPage = SectionStartPage
+
+    def GetSectionName(self):
+        return self.SectionName
+
+
+class TableOfContents(object):
+
+    def __init__(self, ToC_Dict):
+        self.SectionList = []
+
+        for SectionName, SectionStartPage in ToC_Dict.items():
+            self.SectionList.append(
+                Section(SectionName, SectionStartPage)
+            )
+
+    def GetSection(self, PossibleSectionName):
+        for section in self.SectionList:
+            if PossibleSectionName in section.GetSectionName():
+                return section
+
+
+Testing = TableOfContents(G_TableOfContents)
 
 
 class SecLocs(object):
@@ -163,4 +192,4 @@ class SecLocs(object):
 SectionName = G_allSections[2]
 
 sl = SecLocs(SectionName)
-print(sl.SectionName, sl.StartEndPages, sl.StartEndLocs, sl.NextSectionName)
+print(sl.SectionName)
