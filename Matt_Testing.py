@@ -153,14 +153,19 @@ class TableOfContents(object):
             self.SectionList.append(
                 Section(SectionName, SectionStartPage)
             )
+        self._gen = self._YieldSection()
 
-    def GetSection(self, PossibleSectionName):
+    def GetNextSection(self):
+        return next(self._gen)
+
+    def _YieldSection(self):
         for section in self.SectionList:
-            if PossibleSectionName in section.GetSectionName():
-                return section
-
+            yield section
 
 Testing = TableOfContents(G_TableOfContents)
+
+print(Testing.GetNextSection().GetSectionName())
+print(Testing.GetNextSection().GetSectionName())
 
 
 class SecLocs(object):
@@ -192,4 +197,3 @@ class SecLocs(object):
 SectionName = G_allSections[2]
 
 sl = SecLocs(SectionName)
-print(sl.SectionName)
