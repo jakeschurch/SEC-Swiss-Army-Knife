@@ -133,12 +133,10 @@ if __name__ == "__main__":
     def func():
         pass
 
-    '''d = globals().copy()
-
-    print(datetime.datetime.now())
+    d = globals().copy()
 
     for (item, val) in d.items():
         if type(d[item]) == type(func):
             globals()[item] = CheckInputTypes(d[item])
 
-    foo(bar='hello', buz='world')'''
+    foo(bar='hello', buz='world')

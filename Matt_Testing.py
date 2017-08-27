@@ -1,20 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
 
-# 8-K test URL
-# url = "https://www.sec.gov/Archives/edgar/data/354950/000035495017000017/hd_8kx05242017.htm"
-# 10-K Test URLs
-# url = "https://www.sec.gov/Archives/edgar/data/0001652044/000165204417000008/goog10-kq42016.htm"
-# 10-Q URL
-# url = "https://www.sec.gov/Archives/edgar/data/354950/000035495017000014/hd_10qx04302017.htm"
-# 11-K Test URL
-# url = "https://www.sec.gov/Archives/edgar/data/354950/000035495017000026/hd_prx11kx12312016.htm"
-url = "https://www.sec.gov/Archives/edgar/data/936468/000119312517210489/d410677d11k.htm"
-
-
-r = requests.get(url, stream=True)
-soup = BeautifulSoup(r.content, 'lxml')
-
 
 def CleanText(text):
     """Cleaning Text."""
@@ -26,12 +12,6 @@ def CleanText(text):
     text = text.replace(u'\n', ' ')
 
     return text
-
-cleanText = CleanText(str(soup))
-soup = BeautifulSoup(cleanText, 'lxml')
-
-# For finding number of pages and page locations
-
 
 def Pages(text):
     """Finding Page Location by HR Tag."""
@@ -56,7 +36,6 @@ def Pages(text):
             except Exception:
                 try:
                     if int(pageBreak.find_previous_sibling('p').find_previous_sibling('p').text):
-                        # print("Longer: " + str(pageBreak.find_previous_sibling('p').find_previous_sibling('p').text))
                         NumPages = NumPages + 1
                         PageNumToHR.append([HRTags, NumPages])
                         mydict.update({str(NumPages): str(HRTags)})
@@ -67,9 +46,7 @@ def Pages(text):
                     i = i + 1
                     pass
     return mydict
-pageLoc = Pages(soup)
 
-# Start of whats needed for Getting Table Of Contents
 
 def GetTableOfContents(text):
     """Getting Table of Contents."""
@@ -105,19 +82,14 @@ def GetTableOfContents(text):
     return index
 
 
-TOC = GetTableOfContents(soup)
-
-G_allSections = []
-
-
-def MakeADict(lists):
+def MakeTOC_Dict(listing: list):
     """Creating Dictionary of Table of Contents Sections and Pages."""
-    newDict = {}
-    for listy in lists:
+    Toc_Dict = {}
+    for l in listing:
         pageNum = 0
         myKey = []
-        listy[:] = [item for item in listy if item != 'Table of Contents']
-        for item in listy:
+        l[:] = [item for item in l if item != 'Table of Contents']
+        for item in l:
             try:
                 if int(item):
                     pageNum = int(item)
@@ -126,12 +98,9 @@ def MakeADict(lists):
             except Exception:
                 myKey.append(item)
         for section in myKey:
-            newDict.update({str(section): pageNum})
+            Toc_Dict.update({str(section): pageNum})
             G_allSections.append(section)
-    return newDict
-
-
-G_TableOfContents = MakeADict(TOC)
+    return Toc_Dict
 
 
 class Section(object):
@@ -162,11 +131,6 @@ class TableOfContents(object):
         for section in self.SectionList:
             yield section
 
-Testing = TableOfContents(G_TableOfContents)
-
-print(Testing.GetNextSection().GetSectionName())
-print(Testing.GetNextSection().GetSectionName())
-
 
 class SecLocs(object):
 
@@ -176,7 +140,8 @@ class SecLocs(object):
         self.StartLoc = self.SectionPageBreaks(self.StartPage)
         self.NextSectionName = self.NextSectionName(SectionName)
         self.NextSectionStartPage = self.FindStartPage(self.NextSectionName)
-        self.NextSectionStartLoc = self.SectionPageBreaks(self.NextSectionStartPage)
+        self.NextSectionStartLoc = self.SectionPageBreaks(
+            self.NextSectionStartPage)
         self.StartEndPages = [self.StartPage, self.NextSectionStartPage]
         self.StartEndLocs = [self.StartLoc, self.NextSectionStartLoc]
 
@@ -194,6 +159,53 @@ class SecLocs(object):
         return G_allSections[G_allSections.index(SectionName) + 1]
 
 
-SectionName = G_allSections[2]
+def TestFilingText(typeWanted: str):
+    #    url = "https://www.sec.gov/Archives/edgar/data/936468/000119312517210489/d410677d11k.htm"
+    if typeWanted.lower() == '10-k':
+        return "https://www.sec.gov/Archives/edgar/data/0001652044/000165204417000008/goog10-kq42016.htm"
 
-sl = SecLocs(SectionName)
+    elif typeWanted.lower() == '10-q':
+        return "https://www.sec.gov/Archives/edgar/data/354950/000035495017000014/hd_10qx04302017.htm"
+
+    elif typeWanted.lower() == '11-k':
+        return "https://www.sec.gov/Archives/edgar/data/354950/000035495017000026/hd_prx11kx12312016.htm"
+
+    elif typeWanted.lower() == '8-k':
+        return "https://www.sec.gov/Archives/edgar/data/354950/000035495017000017/hd_8kx05242017.htm"
+
+
+# def Alt_TOC_Finder(url):
+#     import pandas as pd
+#
+#     DF = pd.read_html(url)
+#     for table in DF:
+#         if table[0].str.contains('Item').any() and len(table.columns) > 1:
+#             print(table.dropna())
+#             return (table.dropna(thresh=2).reset_index(drop=True))
+
+
+if __name__ == '__main__':
+
+    url = TestFilingText('10-q')
+
+    r = requests.get(url, stream=False)
+    soup = BeautifulSoup(r.content, 'lxml')
+    cleanText = CleanText(str(soup))
+    soup = BeautifulSoup(cleanText, 'lxml')
+
+    pageLoc = Pages(soup)
+
+    TOC = GetTableOfContents(soup)
+
+    G_allSections = []
+
+    G_TableOfContents = MakeTOC_Dict(TOC)
+
+    Testing = TableOfContents(G_TableOfContents)
+
+    print(Testing.GetNextSection().GetSectionName())
+    print(Testing.GetNextSection().GetSectionName())
+
+    SectionName = G_allSections[2]
+
+    sl = SecLocs(SectionName)
