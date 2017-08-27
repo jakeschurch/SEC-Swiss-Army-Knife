@@ -99,18 +99,18 @@ class Filing(object):
 
         if FilingType not in self._working_FilingTypes:
             raise ValueError("Invalid filing type")
-        else:
-            self.ticker = ticker
-            self.CIK = CIK
-            self.FilingType = FilingType
-            self.AccNum = AccNum
-            self.AccNumW_oDashes = AccNumW_oDashes
-            self.FilingDate = FilingDate
-            self.N_filingWanted = N_filingWanted
-            self.totalFilingsWanted = totalFilingsWanted
-            self.FilingsDF = FilingsDF
-            self.FilingText = None
-            self.SgmlHead = None
+
+        self.ticker = ticker
+        self.CIK = CIK
+        self.FilingType = FilingType
+        self.AccNum = AccNum
+        self.AccNumW_oDashes = AccNumW_oDashes
+        self.FilingDate = FilingDate
+        self.N_filingWanted = N_filingWanted
+        self.totalFilingsWanted = totalFilingsWanted
+        self.FilingsDF = FilingsDF
+        self.FilingText = None
+        self.SgmlHead = None
 
     def GetInitKwargs(self, N_filingWanted):
         self.FindAccNumAndFilingDate(N_filingWanted)

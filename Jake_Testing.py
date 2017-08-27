@@ -5,8 +5,6 @@ import SecCrawler as sc
 import re
 import bs4
 from bs4 import BeautifulSoup
-import copy
-from datetime import datetime
 
 
 def CheckInputTypes(func):
@@ -139,4 +137,4 @@ if __name__ == "__main__":
         if type(d[item]) == type(func):
             globals()[item] = CheckInputTypes(d[item])
 
-    foo(bar='hello', buz='world')
+    foo('hello', 'world')

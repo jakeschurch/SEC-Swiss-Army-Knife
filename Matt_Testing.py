@@ -1,6 +1,12 @@
 import requests
 from bs4 import BeautifulSoup
 
+# TODO:
+rename Pages func
+rename Pages.mydict
+rename GetTableOfContents.piece
+
+
 
 def CleanText(text):
     """Cleaning Text."""
