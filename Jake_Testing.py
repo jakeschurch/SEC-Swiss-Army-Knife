@@ -31,17 +31,17 @@ def CheckInputTypes(func):
 
 
 @CheckInputTypes
-def foo(bar: int, buz: int):
+def foo(bar: int, buz: int) -> int:
     int3 = bar + buz
     return int3
 
 
-def GetItemsFromSGML(SgmlHead):
+def GetItemsFromSGML(SgmlHead) -> list:
     items = re.findall(r'(?:\<ITEMS\>)(\d{1}\.\d{2})', SgmlHead)
     return items
 
 
-def CleanHtmlMarkup(markup: bs4.element.ResultSet):
+def CleanHtmlMarkup(markup: bs4.element.ResultSet) -> bs4.element.ResultSet:
     markup = markup.replace('</font>', " </font>")
     markup = markup.replace("</div>", "\n</div>")
     markup = markup.replace("Table of Contents", "")
@@ -49,7 +49,7 @@ def CleanHtmlMarkup(markup: bs4.element.ResultSet):
     return markup
 
 
-def CleanTextMarkup(text: str):
+def CleanTextMarkup(text: str) -> str:
     text = text.replace('\u200b', "")
     text = text.replace('• \n', '•')
     text = re.sub(r'[^\x00-\x7f]', r' ', text)
@@ -128,13 +128,13 @@ if __name__ == "__main__":
     testFiling = sc.G_filingListing[0]
     FilingTextParser(testFiling)
 
-    def func():
-        pass
-
-    d = globals().copy()
-
-    for (item, val) in d.items():
-        if type(d[item]) == type(func):
-            globals()[item] = CheckInputTypes(d[item])
-
-    foo('hello', 'world')
+    # def func():
+    #     pass
+    #
+    # d = globals().copy()
+    #
+    # for (item, val) in d.items():
+    #     if type(d[item]) == type(func):
+    #         globals()[item] = CheckInputTypes(d[item])
+    #
+    # foo('hello', 'world')

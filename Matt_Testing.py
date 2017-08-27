@@ -1,11 +1,10 @@
 import requests
 from bs4 import BeautifulSoup
 
-# TODO:
-rename Pages func
-rename Pages.mydict
-rename GetTableOfContents.piece
-
+# TODO: rename Pages func
+# TODO: rename Pages.mydict
+# TODO: rename GetTableOfContents.piece
+# TODO: make a funciton that puts everything through the 'pipeline'
 
 
 def CleanText(text):
@@ -19,8 +18,9 @@ def CleanText(text):
 
     return text
 
-def Pages(text):
-    """Finding Page Location by HR Tag."""
+
+def Pages(text) -> dict:
+    """Find Page Location by HR Tag."""
     PageNumToHR = []
     mydict = {}
     NumPages = 0
@@ -54,8 +54,8 @@ def Pages(text):
     return mydict
 
 
-def GetTableOfContents(text):
-    """Getting Table of Contents."""
+def GetTableOfContents(text) -> list:
+    """Get Table of Contents."""  # NOTE: Not needed after func name change, may want to change instead to output list
     tables = text('table')
     allText = []
     index = []
@@ -88,7 +88,7 @@ def GetTableOfContents(text):
     return index
 
 
-def MakeTOC_Dict(listing: list):
+def MakeTOC_Dict(listing: list) -> dict:
     """Creating Dictionary of Table of Contents Sections and Pages."""
     Toc_Dict = {}
     for l in listing:
@@ -111,7 +111,7 @@ def MakeTOC_Dict(listing: list):
 
 class Section(object):
 
-    def __init__(self, SectionName, SectionStartPage):
+    def __init__(self, SectionName: str, SectionStartPage: int):
         self.SectionName = SectionName
         self.SectionStartPage = SectionStartPage
 
@@ -121,10 +121,10 @@ class Section(object):
 
 class TableOfContents(object):
 
-    def __init__(self, ToC_Dict):
+    def __init__(self, ToC: dict):
         self.SectionList = []
 
-        for SectionName, SectionStartPage in ToC_Dict.items():
+        for SectionName, SectionStartPage in ToC.items():
             self.SectionList.append(
                 Section(SectionName, SectionStartPage)
             )
@@ -165,7 +165,8 @@ class SecLocs(object):
         return G_allSections[G_allSections.index(SectionName) + 1]
 
 
-def TestFilingText(typeWanted: str):
+def TestFilingText(typeWanted: str) -> str:
+    """Get test url based on filing type."""
     #    url = "https://www.sec.gov/Archives/edgar/data/936468/000119312517210489/d410677d11k.htm"
     if typeWanted.lower() == '10-k':
         return "https://www.sec.gov/Archives/edgar/data/0001652044/000165204417000008/goog10-kq42016.htm"
