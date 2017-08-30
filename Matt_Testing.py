@@ -29,10 +29,19 @@ def Pages(text) -> dict:
     i = 0
     q = 0
     for pageBreak in pageBreaks:
-            HRTags = HRTags + 1
+        HRTags = HRTags + 1
+        try:
+            if pageBreak.previous_sibling.contents[0].text:
+                # print(pageBreak.previous_sibling.contents[0].text)
+                NumPages = NumPages + 1
+                PageNumToHR.append([HRTags, NumPages])
+                mydict.update({str(NumPages): str(HRTags)})
+            else:
+                pass
+                q = q + 1
+        except Exception:
             try:
-                if pageBreak.previous_sibling.contents[0].text:
-                    # print(pageBreak.previous_sibling.contents[0].text)
+                if int(pageBreak.find_previous_sibling('p').find_previous_sibling('p').text):
                     NumPages = NumPages + 1
                     PageNumToHR.append([HRTags, NumPages])
                     mydict.update({str(NumPages): str(HRTags)})
@@ -40,17 +49,8 @@ def Pages(text) -> dict:
                     pass
                     q = q + 1
             except Exception:
-                try:
-                    if int(pageBreak.find_previous_sibling('p').find_previous_sibling('p').text):
-                        NumPages = NumPages + 1
-                        PageNumToHR.append([HRTags, NumPages])
-                        mydict.update({str(NumPages): str(HRTags)})
-                    else:
-                        pass
-                        q = q + 1
-                except Exception:
-                    i = i + 1
-                    pass
+                i = i + 1
+                pass
     return mydict
 
 
@@ -121,7 +121,7 @@ class Section(object):
 
 class TableOfContents(object):
 
-    def __init__(self, ToC: dict):
+    def __init__(self, ToC: dict) -> None:
         self.SectionList = []
 
         for SectionName, SectionStartPage in ToC.items():

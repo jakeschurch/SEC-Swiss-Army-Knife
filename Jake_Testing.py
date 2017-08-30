@@ -14,19 +14,29 @@ def CheckInputTypes(func):
             ArgValue = next(iter(locals()['args']))
             ArgParamType = next(iter(func.__annotations__.keys()))
 
-            if type(ArgValue) != func.__annotations__[ArgParamType]:
+            if isinstance(ArgValue, func.__annotations__[ArgParamType]) is False:
                 raise TypeError(
-                    "Arg: '{0}' in {1}() is not of type: {2}".format(
-                        ArgParamType, func.__name__,
+                    "Arg: {0} in function {1} is not of type {2}".format(
+                        repr(ArgParamType), repr(func.__name__),
                         func.__annotations__[ArgParamType]))
 
         for kwarg in kwargs:
-            if type(locals()['kwargs'][kwarg]) != func.__annotations__[kwarg]:
+            KwargValue = locals()['kwargs'][kwarg]
+
+            if isinstance(KwargValue, func.__annotations__[kwarg]) is False:
                 raise TypeError(
-                    "Kwarg: '{0}' in {1}() is not of type: {2}").format(
-                        kwarg, func.__name__,
-                        func.__annotations__[kwarg])
-        return func(*args, **kwargs)
+                    "Kwarg: {0} in function {1} is not of type {2}".format(
+                        repr(kwarg), repr(func.__name__),
+                        func.__annotations__[kwarg]))
+
+        RanFunc = func(*args, **kwargs)
+        if isinstance(RanFunc, func.__annotations__['return']) is False:
+            raise TypeError(
+                "Return value {0} in function {1} is not of type {2}".format(
+                    repr(RanFunc), repr(func.__name__),
+                    func.__annotations__['return']))
+
+        return RanFunc
     return wrapper
 
 
@@ -104,10 +114,10 @@ def GetCleanTags(HTML_Entity: bs4.element.ResultSet) -> list:
     return FoundTags
 
 
-def FilingTextParser(filing: sc.Filing):
+def FilingTextParser(filing: sc.Filing) -> str:
 
     _Content = BeautifulSoup(filing.FilingText, "lxml").find(['document',
-                                                             'text'])
+                                                              'text'])
     _CleanTags = GetCleanTags(HTML_Entity=_Content)
 
     _CleanHtml = CleanHtmlMarkup(
@@ -123,10 +133,9 @@ def FilingTextParser(filing: sc.Filing):
 
 
 if __name__ == "__main__":
-
-    sc.SetInterimListing([sc.Filing("goog", "10-k", totalFilingsWanted=1)])
-    testFiling = sc.G_filingListing[0]
-    FilingTextParser(testFiling)
+    # sc.SetInterimListing([sc.Filing("goog", "10-k", totalFilingsWanted=1)])
+    # testFiling = sc.G_filingListing[0]
+    # FilingTextParser(testFiling)
 
     # def func():
     #     pass
