@@ -215,4 +215,5 @@ if __name__ == '__main__':
 
     SectionName = G_allSections[2]
 
-    sl = SecLocs(SectionName)
+    sl = SecLocs(SectionName).FindStartPage(SectionName)
+    print(sl)
